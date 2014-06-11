@@ -134,13 +134,13 @@
 	   (list robot foot-convex arrow))
      (send viewer :look-all)
      (send viewer :draw-objects)))
-   ;;
-   (setq *tf* (instance ros::transform-listener :init))
-   ;;
    (ros::roseus ik-server-name)
    (ros::advertise-service ik-server-service-name
 			   moveit_msgs::GetPositionIK
 			   #'send self :ik-service-cb)
+   ;;
+   (setq *tf* (instance ros::transform-listener :init))
+   ;;
    (ros::rate 10)
    (send self :loop-ik-server)
    )
@@ -178,8 +178,10 @@
     (if (not (ros::ok)) (return-from nil nil))
     (unless (or (null x::*display*) (= x::*display* 0))
       (x::window-main-one))
+    (ros::spin-once)
     (ros::sleep)
-    (ros::spin-once))
+    ;;(unix:usleep (* 100 1000))
+    )
    )
   ;;
   ;;
