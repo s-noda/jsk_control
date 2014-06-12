@@ -1,6 +1,6 @@
 #!/usr/bin/env roseus
 
-(send *pickview* :viewer :viewsurface :bg-color #F(1 1 1 0))
+(send *pickview* :viewer :viewsurface :bg-color #F(0.9 0.9 0.9 0))
 
 (defun dump-pose-data
   (&key
