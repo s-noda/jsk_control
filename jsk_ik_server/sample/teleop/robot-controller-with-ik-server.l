@@ -5,23 +5,43 @@
 (ros::roseus "robot_controller_with_ik_server")
 
 (let ((ik-client-test (instance fullbody-ik-client :init))
-      (test (unix::getenv "ROBOT_CONTROLLER_NAME"))
-      (foot? (unix::getenv "IK_CLIENT_TEST_WITH_LEG"))
+      (robot-name (unix::getenv "ROBOT_CONTROLLER_ROBOT_NAME"))
+      (foot? (unix::getenv "ROBOT_CONTROLLER_WITH_LEG"))
+      (sim? (unix::getenv "ROBOT_CONTROLLER_SIM_MODE"))
       )
   (if (and (stringp foot?) (plusp (length foot?)))
       (setq foot? (string-equal foot? "true")))
+  (if (and (stringp sim?) (plusp (length sim?)))
+      (setq sim? (string-equal sim? "true")))
+  (if (not sim?)
+      (setq *ri*
+	    (progn
+	      (defclass dummy-ri :super object :slots nil)
+	      (defmethod dummy-ri (:nomethod (&rest args) nil))
+	      (instance dummy-ri :init))))
   (cond
-   ((substringp "hrp2jsknt" test)
-    (require :hrp2jsknt "package://hrpsys_ros_bridge_tutorials/models/hrp2jsknt.l")
-    (when (probe-file (ros::resolve-ros-path "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsknt-utils.l"))
-      (require :hrp2jsknt-utils "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsknt-utils.l"))
-    (defvar *robot* (hrp2jsknt))
-    (objects (list *robot*))
+   ((substringp "staro" robot-name)
+    ;; (require "package://hrpsys_ros_bridge_tutorials/models/staro.l")
+    ;; (defvar *robot* (staro))
+    ;; (objects (list *robot*))
+    (require "package://jsk_hrpsys_ros_bridge/euslisp/staro-interface.l")
+    (cond
+     (sim?
+      (staro-init)
+      (setq *robot* *staro*))
+     (t
+      (setq *robot* (staro))
+      (objects (list *robot*))))
     )
-   (t ;; (substringp "staro" test)
-    (require "package://hrpsys_ros_bridge_tutorials/models/staro.l")
-    (defvar *robot* (staro))
-    (objects (list *robot*))
+   (t ;;(substringp "hrp2jsknt" robot-name)
+    (require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsknt-interface.l")
+    (cond
+     (sim?
+      (hrp2jsknt-init)
+      (setq *robot* *hrp2jsknt*))
+     (t
+      (setq *robot* (hrp2jsknt))
+      (objects (list *robot*))))
     )
    ))
 
@@ -39,7 +59,9 @@
 	(sleep-time 5000)
 	(max-vel 50) ;; deg/s
 	(diff (norm (v- (send robot :angle-vector)
-			(send *ri* :state :potentio-vector))))
+			(or (send *ri* :state :potentio-vector)
+			    (send robot :angle-vector))
+			)))
 	wait?
 	)
   (setq sleep-time
@@ -52,7 +74,7 @@
   (if wait? (send *ri* :wait-interpolation))
   sleep-time)
 
-(defun model2real (&rest args &key (sleep-time 1000) &allow-other-keys) sleep-time)
+;; (defun model2real (&rest args &key (sleep-time 1000) &allow-other-keys) sleep-time)
 
 (defun real2model
   nil

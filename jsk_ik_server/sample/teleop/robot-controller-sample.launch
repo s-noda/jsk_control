@@ -9,7 +9,8 @@
   </node>
   <node pkg="roseus" type="roseus" name="robot_controller" output="screen"
 	args="$(find jsk_ik_server)/sample/teleop/robot-controller-with-ik-server.l">
-    <env name="ROBOT_CONTROLLER_NAME" value="$(arg CONTROL_ROBOT)"/>
+    <env name="ROBOT_CONTROLLER_ROBOT_NAME" value="$(arg CONTROL_ROBOT)"/>
+    <env name="ROBOT_CONTROLLER_SIM_MODE" value="false"/>
   </node>
   <node pkg="roseus" type="roseus" name="pose_play_panel" output="screen"
 	args="$(find jsk_ik_server)/sample/teleop/pose-play-panel.l">
