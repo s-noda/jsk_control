@@ -11,7 +11,7 @@
 (require "dynamics-motion/dynamic-trajectory.l")
 (require "util/partition-spline/partition-spline.l")
 (require "euslib/irteus_proposals/motion-lib-proposal.l")
-(require "motion-lib-proposal.l")
+;; (require "motion-lib-proposal.l")
 ;; (require "math/matrix-util.l")
 
 ;;
