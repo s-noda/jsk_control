@@ -46,13 +46,16 @@
 	 (send *robot* :reset-manip-pose)
 	 (send *sandia_hand_left* :grasp-pose)
 	 (send *sandia_hand_right* :grasp-pose)
-	 (send *robot* :newcoords
+	 (send (car (send *robot* :links)) :newcoords
 	       (make-coords
 		:pos
 		(float-vector
 		 -200 0
 		 (aref (v- (send *robot* :worldpos)
 			   (send *robot* :rleg :end-coords :worldpos)) 2)))))
+       )
+      (:jaxon
+       ;; not implemented yet
        )
       (t
        (require "package://euslisp/jskeus/irteus/demo/sample-robot-model.l")
@@ -71,89 +74,3 @@
       (format t "              set ~A Nm  as torque limit~%"
 	      val (send j :name))
       (send j :max-joint-torque val)))))
-
-#|
-
-roseus
-(defvar *robot-type* :staro)
-(load "motion-sequencer.l")
-(objects *robot*)
-(send-all (send *robot* :joint-list) :max-joint-torque 300)
-
-(defvar *psuedo-inverse* #'pseudo-inverse)
-(defun pseudo-inverse
-  (m &optional ret mat)
-  (setq ret (funcall *psuedo-inverse* m))
-  (while (null ret)
-    (if (null mat) (setq mat (copy-object m)))
-    (dotimes (i (send mat :get-val 'dim0))
-      (dotimes (j (send mat :get-val 'dim1))
-	(setf (aref mat i j)
-	      (+ (aref mat i j) (- (random 0.01) 0.005)))))
-    (setq ret (funcall *psuedo-inverse* mat)))
-  ret)
-
-(setq buf nil)
-(setq *kca-cog-gain* 3)
-(setq *pg-move-gain* (/ 10000 2))
-(dotimes (i 100)
-  (init-pose)
-  (send *robot* :reset-manip-pose)
-  (send *robot* :arms
-   	:inverse-kinematics
-   	(make-coords :pos #F(10000 0 0))
-   	:revert-if-fail nil)
-  (setq hoge i)
-  (if (not
-       (simple-fullbody
-	:target
-	(list
-	 (list (cons :target :lleg)
-	       (cons :move (float-vector 300 0 (* (+ 0 i) 10))))
-	 (list (cons :target :rleg)))
-	:root-link-virtual-joint-weight
-	#F(1 1 1 1 1 1)
-	:target-centroid-pos nil))
-      (return-from nil i))
-  (if (not
-       (simple-fullbody
-	:target
-	(list
-	 (list (cons :target :lleg))
-	 (list (cons :target :rleg)))
-	:root-link-virtual-joint-weight
-	#F(1 1 1 1 1 1)
-	:centroid-thre 10
-	:target-centroid-pos
-	(send *robot* :lleg :end-coords :worldpos)))
-      (print 'hoge))
-  (push
-   (pose-generate-with-contact-state
-    (now-contact-state :limb-keys '(:lleg))
-    :rest-contact-states
-    (now-contact-state :limb-keys '(:rleg))
-    :ik-debug-view nil;; :no-message
-    :root-link-virtual-joint-weight
-    #F(1 1 1 1 1 1)
-    :non-stop t
-    :centroid-thre-rate 0.9
-    :convergence-thre 0.1
-    :tmax-leg-rate 0.7)
-   buf)
-  (send *viewer* :draw-objects)
-  (if (not (and (car buf) (send (car buf) :full-constrainted)))
-      (return-from nil i))
-  (format t "height: ~A~%" (* i 10)))
-(print hoge)
-
-(mapcar
- #'(lambda (d)
-     (send *robot* :angle-vector
-	   (send d :angle-vector))
-     (send *robot* :newcoords
-	   (send d :root-coords))
-     (draw-line-man :flush nil))
- (cdr (flatten buf)))
-(send *viewer* :flush)
-
-(rsd-play :rsd-list (cdr (flatten buf)) :graph-size '(640 640))

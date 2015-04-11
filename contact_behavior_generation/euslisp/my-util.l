@@ -202,7 +202,8 @@
 
 (defun init-pose (&key (robot *robot*) (move 0) (rot-z 0) (debug-view nil))
   (send robot :reset-pose)
-  (send robot :newcoords (make-coords))
+  ;; (send robot :newcoords (make-coords))
+  (send robot :fix-leg-to-coords (make-coords) :both)
   (simple-fullbody
    :debug-view debug-view
    :centroid-thre 0.1
@@ -216,9 +217,10 @@
     (list (cons :target :lleg)
 	  (cons :rpy (list (* -1 rot-z) 0 0))
 	  (cons :move (float-vector 0 (* -1 move) 0)))))
-  (send robot :locate
-	(float-vector
-	 0 0  (* -1 (aref (send (send robot :lleg :end-coords) :worldpos) 2))))
+  (send robot :fix-leg-to-coords (make-coords) :both)
+  ;; (send robot :locate
+  ;; (float-vector
+  ;; 0 0  (* -1 (aref (send (send robot :lleg :end-coords) :worldpos) 2))))
   )
 
 (defun force-sensor-cascoords
@@ -282,8 +284,7 @@
 			     (send *robot* limb-key :links)
 			   (send *robot* :links)))))
   (send *robot* :angle-vector angle-vector)
-  (send *robot* :newcoords (make-coords :pos root-pos
-					:rot root-rot))
+  (send *robot* :newcoords (make-coords :pos root-pos :rot root-rot))
   (or
    (find-if #'(lambda (cd)
 		(and (eq parent-link (send cd :parent))
