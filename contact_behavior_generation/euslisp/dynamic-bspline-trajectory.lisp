@@ -4,15 +4,15 @@
 
 (defvar *robot-type* :hrp2jsknts-collada)
 
-(require "motion-sequencer.l")
+(require "motion-sequencer.lisp")
 (if (not (functionp 'float-limb-trajectory))
     (require "dynamic-connector.l"))
-(require "dynamics-motion/dynamic-torque-util.l")
-(require "dynamics-motion/dynamic-trajectory.l")
-(require "util/partition-spline/partition-spline.l")
-(require "euslib/irteus_proposals/motion-lib-proposal.l")
-;; (require "motion-lib-proposal.l")
-;; (require "math/matrix-util.l")
+(require "dynamics-motion/dynamic-torque-util.lisp")
+(require "dynamics-motion/dynamic-trajectory.lisp")
+(require "util/partition-spline/partition-spline.lisp")
+(require "euslib/irteus_proposals/motion-lib-proposal.lisp")
+;; (require "motion-lib-proposal.lisp")
+;; (require "math/matrix-util.lisp")
 
 ;;
 ;; rsd-list
@@ -549,7 +549,7 @@
 		;; (hoge (format t " move-contact=~A~% d-list=~A~%" move-contact d-list))
 		(move-coords-list
 		 (progn
-		   ;; (require "dynamic-connector.l")
+		   ;; (require "dynamic-connector.lisp")
 		   (or (send now-rsd :buf :move-coords-list)
 		       (if (null move-contact)
 			   (if (null d-list) (print 'nil-data-list)

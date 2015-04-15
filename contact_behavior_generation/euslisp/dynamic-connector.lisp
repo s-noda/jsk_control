@@ -5,14 +5,14 @@
 (defvar *real-flag* nil)
 (defvar *sim-flag* nil)
 
-(require "my-util.l")
-(require "util/spline.l")
-(require "motion-sequencer.l")
-(require "robot-state-data2.l")
-(require "contact-state.l")
-;; (require "dynamic-bspline-trajectory.l")
-(require "dynamics-motion/dynamic-optimize.l")
-(require "util/spline-interpole-test.l")
+(require "my-util.lisp")
+(require "util/spline.lisp")
+(require "motion-sequencer.lisp")
+(require "robot-state-data2.lisp")
+(require "contact-state.lisp")
+;; (require "dynamic-bspline-trajectory.lisp")
+(require "dynamics-motion/dynamic-optimize.lisp")
+(require "util/spline-interpole-test.lisp")
 
 ;; @Override
 (defun ik-wrapper
@@ -192,7 +192,7 @@
     (reverse ret)
     ;ret
     ))
-(require "dynamic-bspline-trajectory.l")
+(require "dynamic-bspline-trajectory.lisp")
 
 (defun connect-rsd
   (&key
@@ -320,7 +320,7 @@
    instant average
    torque-vector name-list data-list average-list
    id freq opt rsd1 rsd2)
-  (require "util/graph-sample.l")
+  (require "util/graph-sample.lisp")
   (dolist (rsds (mapcar #'cons rsd-list (append (cdr rsd-list) (list *sample-rsd*))))
     (setq rsd1 (car rsds))
     (setq rsd2 (cdr rsds))

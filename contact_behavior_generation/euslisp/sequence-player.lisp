@@ -1,12 +1,12 @@
 (defvar *real-flag* nil)
 (defvar *sim-flag* nil)
 
-(require "connect.l")
-(require "my-util.l")
-(require "util/spline.l")
-(require "motion-sequencer.l")
-(require "robot-state-data2.l")
-(require "contact-state.l")
+(require "connect.lisp")
+(require "my-util.lisp")
+(require "util/spline.lisp")
+(require "motion-sequencer.lisp")
+(require "robot-state-data2.lisp")
+(require "contact-state.lisp")
 
 (defun calc-distance
   (pos)

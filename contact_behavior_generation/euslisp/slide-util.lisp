@@ -197,7 +197,7 @@
   (cond
    ((not (eq *robot-type* :staro))
     (setq *robot-type* :staro)
-    (load "robot-param.l")
+    (load "robot-param.lisp")
     (demo-climb-setup :simple-floor)))
   ;;
   (setq *kca-cog-gain* 5)
@@ -360,7 +360,7 @@ send (car a) :contact-forces :larm
 #f(-0.273543 0.038621 345.834 1.66003 15.9387 0.024487)
 #f(-0.202917 -0.211669 249.049 -2.9271 12.4524 -0.132638)
 
-(require "util/gp-util.l")
+(require "util/gp-util.lisp")
 (mapcar
  #'(lambda (graph)
      (if (or (substringp "rarm" (send graph :name))
@@ -371,7 +371,7 @@ send (car a) :contact-forces :larm
 
 roseus
 (defvar *robot-type* :hrp2jsknts-collada)
-(require "motion-sequencer.l")
+(require "motion-sequencer.lisp")
 (demo-climb-setup :kirin-ladder)
 (setq
  a
@@ -381,7 +381,7 @@ roseus
   :tmax-leg-rate 0.6
   ))
 
-(require "dynamic-connector.l")
+(require "dynamic-connector.lisp")
 (connect-rsd :rsd-list a)
 
 (rsd-serialize :rsd-list a :file "slide-kirin-climb.rsd")

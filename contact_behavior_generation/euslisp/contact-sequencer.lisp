@@ -4,10 +4,10 @@
 
 (defvar *robot-type* :hrp2jsk-gazebo)
 
-(require "robot-param.l")
-(require "motion-sequencer.l")
-(require "model/simple-floor.l")
-(require "ik-without-collision.l")
+(require "robot-param.lisp")
+(require "motion-sequencer.lisp")
+(require "model/simple-floor.lisp")
+(require "ik-without-collision.lisp")
 
 (defun simple-contact-state-transition
   (cs-start cs-end

@@ -5,12 +5,12 @@
 (defvar *log-stream* t)
 
 ;; (defvar *robot-type* :staro)
-(require "robot-param.l")
-(require "my-util.l")
-(require "util/min-power.l")
-(require "util/spline.l")
-(require "pose-generator-with-contact-state.l")
-(require "slide-util.l")
+(require "robot-param.lisp")
+(require "my-util.lisp")
+(require "util/min-power.lisp")
+(require "util/spline.lisp")
+(require "pose-generator-with-contact-state.lisp")
+(require "slide-util.lisp")
 
 (defun funcall-with-time
   (func
@@ -819,7 +819,7 @@
   ;; gen climb object
   (cond
    ((eq mode :simple-floor)
-    (require "model/simple-floor.l")
+    (require "model/simple-floor.lisp")
     (setq *climb-obj* (instance simple-floor :init :z 0))
     (cond
      ((eq *robot-type* :staro)
@@ -851,7 +851,7 @@
 	       name cc cn ux uy uz lx ly f0 tc)))))
     )
    ((eq mode :four-leg-seat)
-    (require "model/four-leg-seat.l")
+    (require "model/four-leg-seat.lisp")
     (setq *climb-obj* (instance four-leg-seat :init))
     (send *climb-obj* :translate
 	  (float-vector (- (/ (send *climb-obj* :get-val 'depth) -2.0) 100) 0 0)
@@ -867,24 +867,24 @@
 			 (flatten (send *robot* :arms :links))))))
     (setup-hip-end-coords))
    ((eq mode :rock-wall)
-    (require "model/random-rock-wall.l")
+    (require "model/random-rock-wall.lisp")
     (setq *climb-obj* (instance random-rock-wall :init))
     (send *climb-obj* :translate #F(400 0 1500) :world)
 ;    (gl::transparent (*climb-obj* . wall-obj) 0.4)
     )
    ((eq mode :kirin-ladder)
-    (require "model/kirin-ladder.l")
+    (require "model/kirin-ladder.lisp")
     (setq *climb-obj* (instance kirin-ladder :init))
     (send *climb-obj* :translate #F(150 0 0) :world))
    ((eq mode :hasegawa-ladder)
-    (require "model/hasegawa-ladder.l")
+    (require "model/hasegawa-ladder.lisp")
     (setq *climb-obj* (instance hasegawa-ladder :init))
     (send *climb-obj* :translate #F(270 0 0) :world))
    ((eq mode :big-ladder)
-    (require "model/big-ladder.l")
+    (require "model/big-ladder.lisp")
     (setq *climb-obj* (instance big-ladder :init)))
    ((eq mode :garakuta-car)
-    (require "model/garakuta-car.l")
+    (require "model/garakuta-car.lisp")
     (setq *kca-cog-gain* 7.0)
     ;; (setq *pg-optional-ik-contact-states*
     ;;       (append *pg-optional-ik-contact-states*
@@ -932,7 +932,7 @@
     (send *climb-obj* :rotate (deg2rad -90) :z)
     (send *climb-obj* :translate #F(-550 0 0) :world))
    (t ; :param-ladder
-    (require "model/param-ladder.l")
+    (require "model/param-ladder.lisp")
     (setq *climb-obj*
 	  (instance param-ladder :init
 		    :step-vector

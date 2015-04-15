@@ -1,7 +1,7 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-;;(require "my-util.l")
+;;(require "my-util.lisp")
 
 (defvar *log-stream* t)
 
