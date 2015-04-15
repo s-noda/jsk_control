@@ -96,7 +96,7 @@
  		 (cond
  		  ((not (eq *robot-type* :staro))
  		   (setq *robot-type* :staro)
- 		   (load "robot-param.l")))
+ 		   (load "robot-param.lisp")))
  		 (demo-climb-setup :simple-floor)
  		 (send *best-facefall* :draw :friction-cone? nil)
 		 (gen-init-rsd)
