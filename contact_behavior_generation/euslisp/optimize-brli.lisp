@@ -1,15 +1,15 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-(require "contact-state.l")
-(require "robot-state-data2.l")
-(require "robot-param.l")
+(require "contact-state.lisp")
+(require "robot-state-data2.lisp")
+(require "robot-param.lisp")
 
-(require "package://eus_qp/euslisp/eiquadprog.l")
-(require "package://eus_qpoases/euslisp/eus-qpoases.l")
-(require "math/matrix-util.l")
+(require "package://eus_qp/euslisp/eiquadprog.lisp")
+(require "package://eus_qpoases/euslisp/eus-qpoases.lisp")
+(require "math/matrix-util.lisp")
 
-(require "util/partition-spline/partition-spline.l")
+(require "util/partition-spline/partition-spline.lisp")
 
 (defvar *log-stream* t)
 
@@ -601,7 +601,7 @@
   ;; 	)
   )
 
-;; (require "euslib/irteus_proposals/motion-lib-proposal.l")
+;; (require "euslib/irteus_proposals/motion-lib-proposal.lisp")
 ;; (defun optimize-brli
 ;;   (&key (robot *robot*)
 ;; 	(contact-states (now-contact-state))

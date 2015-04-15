@@ -1,7 +1,7 @@
 (defvar *robot-type* :hrp2jsknts-collada)
 
-(require "motion-sequencer.l")
-(require "dynamic-connector.l")
+(require "motion-sequencer.lisp")
+(require "dynamic-connector.lisp")
 
 (defvar *log-root* (format nil "log/~A" (log-surfix)))
 (defvar *debug* :no-message)

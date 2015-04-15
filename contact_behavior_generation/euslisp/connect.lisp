@@ -1,7 +1,7 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-(require "util/graph-sample.l")
+(require "util/graph-sample.lisp")
 
 (unless (boundp '*real-flag*)
   (defvar *real-flag* t))
@@ -19,7 +19,7 @@
 ;  (send *ci* :set-interpolation-method :hoffarbib "wor")
   )
  (*sim-flag*
-  (require "package://rats/app/test-rats-plugins-and-server.l")
+  (require "package://rats/app/test-rats-plugins-and-server.lisp")
   (setup-connection))
  (t
   (setup-model-for-hrp2 :no-view t)

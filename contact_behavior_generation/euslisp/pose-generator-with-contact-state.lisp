@@ -1,9 +1,9 @@
-(require "my-util.l")
-(require "util/list2file.l")
-(require "ik-without-collision-org.l")
-(require "robot-state-data2.l")
-(require "contact-state.l")
-(require "optimize-brli.l")
+(require "my-util.lisp")
+(require "util/list2file.lisp")
+(require "ik-without-collision-org.lisp")
+(require "robot-state-data2.lisp")
+(require "contact-state.lisp")
+(require "optimize-brli.lisp")
 
 (defvar *log-stream* t)
 
@@ -454,7 +454,7 @@
   (print ret))
 
 (demo-pose-generate :contact-keys '(:rarm :larm :rleg))
-(load "../../../util/gp-util.l")
+(load "../../../util/gp-util.lisp")
 (graph-panel2gp-graph (cadddr *graph-sample*) :ylabel "NORM" :xlabel "LOOP COUNT" :save? t :ratio 0.7)
 
 (send-all *graph-sample* :set-range #F(0 -2) #F(14 2))

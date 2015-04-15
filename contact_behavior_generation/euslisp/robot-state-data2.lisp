@@ -1,10 +1,10 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-(require "my-util.l")
-(require "contact-state.l")
-(require "robot-param.l")
-(require "ik-without-collision-org.l")
+(require "my-util.lisp")
+(require "contact-state.lisp")
+(require "robot-param.lisp")
+(require "ik-without-collision-org.lisp")
 
 (defvar *log-stream* t)
 
@@ -431,8 +431,8 @@
 ;;
 (defvar *sample-rsd* (instance robot-state-data2 :init))
 
-(require "util/list2file.l")
-(require "util/graph-sample.l")
+(require "util/list2file.lisp")
+(require "util/graph-sample.lisp")
 
 (defun rsd-serialize
   (&key rsd (rsd-list (list rsd))
@@ -570,7 +570,7 @@
      (send a :simple-draw-with-line))
  *graph-sample*)
 
-(load "../../../util/gp-util.l")
+(load "../../../util/gp-util.lisp")
 
 (mapcar
  #'(lambda (a)

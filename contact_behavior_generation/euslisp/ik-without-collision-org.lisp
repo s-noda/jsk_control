@@ -1,4 +1,4 @@
-;; (require "my-util.l")
+;; (require "my-util.lisp")
 
 (defvar *robot-collision-check-list*
   (list

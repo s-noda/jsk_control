@@ -1,7 +1,7 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-(require "util/vector-util.l")
+(require "util/vector-util.lisp")
 
 (defvar *window-main-one-loop-running* nil)
 (defvar *log-stream* t)

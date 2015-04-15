@@ -1,13 +1,13 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-;; (require "my-util.l")
-(require "util/list2file.l")
-(require "ik-without-collision-org.l")
-(require "robot-state-data2.l")
-(require "contact-state.l")
-(require "optimize-brli.l")
-(require "robot-param.l")
+;; (require "my-util.lisp")
+(require "util/list2file.lisp")
+(require "ik-without-collision-org.lisp")
+(require "robot-state-data2.lisp")
+(require "contact-state.lisp")
+(require "optimize-brli.lisp")
+(require "robot-param.lisp")
 
 (defvar *log-stream* t)
 
