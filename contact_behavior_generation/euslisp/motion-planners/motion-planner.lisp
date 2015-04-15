@@ -3,7 +3,7 @@
 
 (defvar *log-stream* t)
 
-(require "motion-sequencer.l")
+(require "motion-sequencer.lisp")
 
 ;;
 ;; input: contact states
@@ -1084,7 +1084,7 @@
 
 roseus
 (defvar *robot-type* :staro)
-(load "motion-planner.l")
+(load "motion-planner.lisp")
 
 (demo-climb-setup :simple-floor)
 (send *best-facefall* :draw :friction-cone? nil)
@@ -1133,7 +1133,7 @@ roseus
    (reverse (cdr *ret*))))
 (rsd-play :rsd-list (cdr *ret*) :auto? t)
 
-(require "util/gp-util.l")
+(require "util/gp-util.lisp")
 (mapcar
  #'(lambda (graph)
      (if t

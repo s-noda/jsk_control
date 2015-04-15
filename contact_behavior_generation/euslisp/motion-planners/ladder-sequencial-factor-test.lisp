@@ -2,7 +2,7 @@
 ;; #-:rbrain-basic (rbrain)
 
 (defvar *robot-type* :hrp2jsknts-collada)
-(require "motion-planners/motion-planner.l")
+(require "motion-planners/motion-planner.lisp")
 
 (demo-climb-setup :kirin-ladder)
 

@@ -1,8 +1,8 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-(require "../my-util.l")
-(require "../contact-state.l")
+(require "../my-util.lisp")
+(require "../contact-state.lisp")
 
 (defvar *robot* (hrp2jsknts-simple-detail))
 ;; (defvar *sample-contact-coords*
@@ -417,7 +417,7 @@
 #|
 
 roseus motion-sequencer.l 
-(load "/home/noda/ros/fuerte/jsk-ros-pkg/euslisp/jskeus/irteus/irtcollada.l")
+(load "/home/noda/ros/fuerte/jsk-ros-pkg/euslisp/jskeus/irteus/irtcollada.lisp")
 
 (demo-climb-setup :kirin-ladder)
 (collada::eus2collada *climb-obj* "/tmp")

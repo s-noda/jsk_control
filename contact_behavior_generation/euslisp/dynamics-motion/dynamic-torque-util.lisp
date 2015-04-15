@@ -1,9 +1,9 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-(require "../robot-state-data2.l")
-(require "../contact-state.l")
-(require "../math/matrix-util.l")
+(require "../robot-state-data2.lisp")
+(require "../contact-state.lisp")
+(require "../math/matrix-util.lisp")
 
 (defmethod bodyset-link
   (:force (&optional f) (if f (setq force f) force))

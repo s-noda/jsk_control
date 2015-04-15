@@ -1,6 +1,6 @@
 
-(require "../../math/matrix-util.l")
-(require "bspline.l")
+(require "../../math/matrix-util.lisp")
+(require "bspline.lisp")
 
 (defclass partition-spline
   :super basic-spline
@@ -241,7 +241,7 @@
        buf))
     (graph
      (progn
-       (require "../graph-sample.l")
+       (require "../graph-sample.lisp")
        (create-graph
 	name
 	:name-list name-list
@@ -437,7 +437,7 @@
    (gain-vector
     (if optimize?
 	(let ((ret (instantiate float-vector (* id-max dimension))))
-	  (require "package://eus_qp/euslisp/eiquadprog.l")
+	  (require "package://eus_qp/euslisp/eiquadprog.lisp")
 	  (format t "[minjerk-interpole]~% D:~A, N:~A, M:~A, x E [~A ~A]~% pos: ~A/~A, vel: ~A/~A, acc: ~A/~A~%"
 		  dimension recursive-order id-max x-min x-max
 		  (length pos-coeff-list) (length (flatten (list mid-pos start-pos end-pos)))

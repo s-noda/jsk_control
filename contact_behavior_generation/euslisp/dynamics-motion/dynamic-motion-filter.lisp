@@ -2,13 +2,13 @@
 ;; #-:rbrain-basic (rbrain)
 
 (defvar *robot-type* :hrp2jsk-collada)
-(require "../robot-state-data2.l")
-(require "../contact-state.l")
-(require "../optimize-brli.l")
-(require "dynamic-torque-util.l")
-(require "dynamic-trajectory.l")
+(require "../robot-state-data2.lisp")
+(require "../contact-state.lisp")
+(require "../optimize-brli.lisp")
+(require "dynamic-torque-util.lisp")
+(require "dynamic-trajectory.lisp")
 
-(require "package://eus_qp/euslisp/eiquadprog.l")
+(require "package://eus_qp/euslisp/eiquadprog.lisp")
 
 (defvar *robot*)
 

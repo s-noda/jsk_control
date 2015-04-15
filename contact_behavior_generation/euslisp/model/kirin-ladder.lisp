@@ -1,9 +1,9 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-(require "../my-util.l")
-(require "../contact-state.l")
-(require "param-ladder.l")
+(require "../my-util.lisp")
+(require "../contact-state.lisp")
+(require "param-ladder.lisp")
 
 (defvar *robot*) ;; (hrp2jsknts-simple-detail))
 
@@ -144,6 +144,6 @@
 
 
 #|
-(load "param-ladder.l")
+(load "param-ladder.lisp")
 (objects (list (setq *kirin-ladder* (instance kirin-ladder :init))))
 

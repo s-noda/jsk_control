@@ -264,7 +264,7 @@
 
 #|
 
-(require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsknts-interface.l")
+(require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsknts-interface.lisp")
 (setq *robot* (instance hrp2jsknts-robot :init))
 (objects (list *robot* (setq *climb-obj* (instance playground-slide :init))))
 

@@ -1,10 +1,10 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-(require "../robot-param.l")
-(require "../my-util.l")
-(require "../contact-state.l")
-(require "param-ladder.l")
+(require "../robot-param.lisp")
+(require "../my-util.lisp")
+(require "../contact-state.lisp")
+(require "param-ladder.lisp")
 
 ;(defvar *robot* (hrp2jsknts-simple-detail))
 
@@ -148,7 +148,7 @@
 
 #|
 
-(require "package://hrpsys_gazebo_atlas/models/drc_ladder.l")
+(require "package://hrpsys_gazebo_atlas/models/drc_ladder.lisp")
 (setq *ladder* (drc-ladder))
 (send *ladder* :rotate (deg2rad -90) :z)
 (send *ladder* :translate #F(1180 0 0) :world)
@@ -164,6 +164,6 @@
 (objects (list *robot* *big-ladder*))
 
 (defvar *robot-type* :atlas)
-(require "motion-sequencer.l")
+(require "motion-sequencer.lisp")
 (demo-climb-setup :big-ladder)
 (demo-motion-sequence)

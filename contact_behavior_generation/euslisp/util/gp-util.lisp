@@ -1,7 +1,7 @@
 #-:jsk (jsk)
 #-:rbrain-basic (rbrain)
 
-(require "graph-sample.l")
+(require "graph-sample.lisp")
 (unless (boundp '*gp*)(setq *gp* (gnuplot)))
 
 (defun graph-panel2gp-graph

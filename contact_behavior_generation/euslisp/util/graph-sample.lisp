@@ -1,4 +1,4 @@
-(require "graph-panel.l")
+(require "graph-panel.lisp")
 
 (defvar *graph-sample* nil)
 (defvar *graph-mutex* (sys:make-mutex-lock))

@@ -1,4 +1,4 @@
-(require "package://gazebo_drive_simulator/euslisp/polaris-xp900-with-handle.l")
+(require "package://gazebo_drive_simulator/euslisp/polaris-xp900-with-handle.lisp")
 
 (defvar *goal-contact-state*)
 
@@ -408,9 +408,9 @@
 ;;
 
 (defvar *robot-type* :staro)
-(require "motion-sequencer.l")
-(require "motion-planners/motion-planner.l")
-(require "model/drc-car.l")
+(require "motion-sequencer.lisp")
+(require "motion-planners/motion-planner.lisp")
+(require "model/drc-car.lisp")
 (send-all (send *robot* :arms :end-coords) :translate (float-vector -80 0 -95) :local)
 (setq *climb-obj*
       (instance drc-car :init :with-car? t :trans 0.3))
@@ -560,5 +560,5 @@
 (setq ret (flatten (rsd-deserialize :file "car-travis-slide.rsd")))
 (rsd-play :rsd-list ret :graph nil)
 
-(require "package://jsk_hrpsys_ros_bridge/euslisp/staro-interface.l")
+(require "package://jsk_hrpsys_ros_bridge/euslisp/staro-interface.lisp")
 (staro-init)

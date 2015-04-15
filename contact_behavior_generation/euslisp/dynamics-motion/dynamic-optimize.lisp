@@ -3,12 +3,12 @@
 ;; #-:rbrain-basic (rbrain)
 
 (defvar *robot-type* :hrp2jsknt)
-(require "../robot-state-data2.l")
-(require "../optimize-brli.l")
-(require "../util/spline.l")
-(require "package://eus_nlopt/euslisp/nlopt-object.l")
-(require "dynamic-torque-util.l")
-(require "dynamic-trajectory.l")
+(require "../robot-state-data2.lisp")
+(require "../optimize-brli.lisp")
+(require "../util/spline.lisp")
+(require "package://eus_nlopt/euslisp/nlopt-object.lisp")
+(require "dynamic-torque-util.lisp")
+(require "dynamic-trajectory.lisp")
 
 (defclass dynamic-optimize
   :super nlopt-object
@@ -381,7 +381,7 @@
       :debug-view :no-message)
 (send *robot* :head :look-at (send *robot* :rarm :end-coords :worldpos))
 
-(load "dynamic-motion-filter.l")
+(load "dynamic-motion-filter.lisp")
 (send *robot* :reset-pose)
 (send *robot* :newcoords (make-coords))
 (demo-motion-filter

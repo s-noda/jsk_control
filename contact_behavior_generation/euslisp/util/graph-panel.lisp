@@ -1,4 +1,4 @@
-(require "graph-data.l")
+(require "graph-data.lisp")
 
 (defclass graph-panel
   :super x::panel

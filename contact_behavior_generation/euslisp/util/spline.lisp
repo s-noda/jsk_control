@@ -459,7 +459,7 @@
    (data-list)
    &allow-other-keys
    )
-  (require "graph-sample.l")
+  (require "graph-sample.lisp")
   (let ((coeff
 	 (apply #'solve-spline
 		(append

@@ -1,5 +1,5 @@
 
-(require "apollo-org.l")
+(require "apollo-org.lisp")
 
 (defclass apollo-with-contact
   :super cascaded-link
@@ -178,8 +178,8 @@
 #|
 
 eus apollo.l
-;; (require "package://hrpsys_ros_bridge_tutorials/models/hrp2jsknts.l")
-(require "../motion-sequencer.l")
+;; (require "package://hrpsys_ros_bridge_tutorials/models/hrp2jsknts.lisp")
+(require "../motion-sequencer.lisp")
 (defvar *robot* (instance hrp2jsknts-robot :init))
 (send *robot* :reset-manip-pose)
 (send *robot* :fix-leg-to-coords (make-coords) :both)
@@ -285,7 +285,7 @@ eus apollo.l
 (progn (setq a (contact-states-filter-check :accept-draw? '(lambda (cs) (eq (send cs :name) :rleg)))) nil)
 
 
-(require "../motion-planners/motion-planner.l")
+(require "../motion-planners/motion-planner.lisp")
 ;; (send *robot* :reset-pose)
 ;; (send *robot* :fix-leg-to-coords
 ;;       (make-coords :pos (float-vector 1010 40 1610))

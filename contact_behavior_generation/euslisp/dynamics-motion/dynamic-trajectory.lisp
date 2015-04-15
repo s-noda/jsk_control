@@ -3,11 +3,11 @@
 ;; #-:rbrain-basic (rbrain)
 
 (defvar *robot-type* :hrp2jsk)
-(require "my-util.l")
-(require "../robot-state-data2.l")
-(require "../optimize-brli.l")
-(require "../util/spline.l")
-(require "dynamic-torque-util.l")
+(require "my-util.lisp")
+(require "../robot-state-data2.lisp")
+(require "../optimize-brli.lisp")
+(require "../util/spline.lisp")
+(require "dynamic-torque-util.lisp")
 
 (defun gen-vel-list
   (pos freq)

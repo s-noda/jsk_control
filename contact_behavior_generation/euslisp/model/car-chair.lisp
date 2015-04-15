@@ -1,5 +1,5 @@
 
-(require "package://gazebo_drive_simulator/euslisp/misumi-ranger-xp900-chair.l")
+(require "package://gazebo_drive_simulator/euslisp/misumi-ranger-xp900-chair.lisp")
 
 (defclass car-chair
   :super misumi-ranger-xp900-chair ;;cascaded-link

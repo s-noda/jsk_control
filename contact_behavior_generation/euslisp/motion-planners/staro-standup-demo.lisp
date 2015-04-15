@@ -2,7 +2,7 @@
 ;; #-:rbrain-basic (rbrain)
 
 (defvar *robot-type* :staro)
-(require "motion-planners/motion-planner.l")
+(require "motion-planners/motion-planner.lisp")
 
 (demo-climb-setup :simple-floor)
 
@@ -110,7 +110,7 @@
   (setq *log-stream* log-stream)
   ;; roseus
   ;; (defvar *robot-type* :staro) ;; staro expected
-  ;; (load "motion-planner.l")
+  ;; (load "motion-planner.lisp")
   (send *best-facefall* :draw :friction-cone? nil)
   (send-all *contact-states* :set-val 'gain '(1.0 1.0 100))
   ;;
@@ -147,7 +147,7 @@
   (&key (graph-stack (setq *sl* (instance stack-list :init))))
   ;; roseus
   ;; (defvar *robot-type* :staro) ;; staro expected
-  ;; (load "motion-planner.l")
+  ;; (load "motion-planner.lisp")
   ;; (demo-climb-setup :simple-floor)
   (send *best-facefall* :draw :friction-cone? nil)
   (send-all *contact-states* :set-val 'gain '(0.7 1.0 10))

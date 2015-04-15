@@ -1,9 +1,9 @@
 #-:jsk (jsk)
 #-:rbrain-basic (rbrain)
 
-(require "package://hrpsys_gazebo_tutorials/euslisp/hrpsys-gazebo-utils.l")
+(require "package://hrpsys_gazebo_tutorials/euslisp/hrpsys-gazebo-utils.lisp")
 
-(require "four-leg-seat.l")
+(require "four-leg-seat.lisp")
 
 (let* ((model (instance four-leg-seat :init)))
   (eus2urdf-for-gazebo model)

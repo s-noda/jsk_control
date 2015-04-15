@@ -1,8 +1,8 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-(require "../my-util.l")
-(require "../contact-state.l")
+(require "../my-util.lisp")
+(require "../contact-state.lisp")
 
 (defvar *robot*) ;; (hrp2jsknts-simple-detail))
 

@@ -1,8 +1,8 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-(require "my-util.l")
-(require "../contact-state.l")
+(require "my-util.lisp")
+(require "../contact-state.lisp")
 
 (defvar *robot*) ;; (hrp2jsknts-simple-detail))
 
@@ -298,9 +298,9 @@
 #|
 
 (setq *robot-type* :hrp2jsknts-collada)
-(require "package://motion-sequencer.l")
-(require "package://motion-planners/motion-planner.l")
-(require "package://model/drc-ladder.l")
+(require "package://motion-sequencer.lisp")
+(require "package://motion-planners/motion-planner.lisp")
+(require "package://model/drc-ladder.lisp")
 (pickview :no-menu t)
 (objects (list (setq *climb-obj* (instance drc-ladder-with-cs-candidates :init))
 	       (send *climb-obj* :get-val 'ladder-pane)
@@ -406,7 +406,7 @@
 #|
 
 (setq *robot-type* :hrp2jsknts-collada)
-(require "package://robot-param.l")
+(require "package://robot-param.lisp")
 (pickview :no-menu t)
 (objects (list *robot* (setq *climb-obj* (instance drc-ladder-with-cs-candidates :init))))
 (setq *contact-states* (flatten (send *climb-obj* :gen-contact-states)))

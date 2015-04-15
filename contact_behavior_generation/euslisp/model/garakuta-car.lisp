@@ -1,9 +1,9 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-(require "euslib/demo/iori/hrp4r/hrp4r_tests/hrp4r-drive-car/drive-simulator-environment.l")
-(require "../my-util.l")
-(require "../contact-state.l")
+(require "euslib/demo/iori/hrp4r/hrp4r_tests/hrp4r-drive-car/drive-simulator-environment.lisp")
+(require "../my-util.lisp")
+(require "../contact-state.lisp")
 
 (defclass garakuta-car
   :super cascaded-link
@@ -263,7 +263,7 @@
 
 (it)
 (setq *robot-type* :staro)
-(load "../robot-param.l")
+(load "../robot-param.lisp")
 
 (ud)
 (objects *staro*)

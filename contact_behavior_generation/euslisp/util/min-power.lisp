@@ -1,5 +1,5 @@
 
-(require "vector-util.l")
+(require "vector-util.lisp")
 
 ;; #f(x,y) data-list ---> (a,b) of y = ax + b
 (defun min-power-2d

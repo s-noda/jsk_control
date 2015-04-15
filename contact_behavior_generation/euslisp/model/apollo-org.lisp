@@ -424,5 +424,5 @@
 
 
 
-;; (provide :apollo "/home/s-noda/prog/tmp-ros-package/tmp_hrpsys_util/gazebo/apollo-static/meshes/lunarlandernofoil_carbajal.l")
+;; (provide :apollo "/home/s-noda/prog/tmp-ros-package/tmp_hrpsys_util/gazebo/apollo-static/meshes/lunarlandernofoil_carbajal.lisp")
 

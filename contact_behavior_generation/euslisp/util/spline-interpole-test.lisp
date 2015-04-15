@@ -2,8 +2,8 @@
 ;; #-:rbrain-basic (rbrain)
 
 (defvar *robot-type* :hrp2jsknt-collada)
-(require "../dynamics-motion/dynamic-trajectory.l")
-(require "../util/partition-spline/partition-spline.l")
+(require "../dynamics-motion/dynamic-trajectory.lisp")
+(require "../util/partition-spline/partition-spline.lisp")
 
 (defun minjerk-coords-interpole
   (&key
@@ -409,8 +409,8 @@
 	   (cond
 	    ((not (and (boundp '*climb-obj*) *climb-obj*))
 	     (setq *robot-type* :hrp2jsknt-collada)
-	     ;; (require "spline-interpole-test.l")
-	     (require "../../motion-sequencer.l")
+	     ;; (require "spline-interpole-test.lisp")
+	     (require "../../motion-sequencer.lisp")
 	     (demo-climb-setup :kirin-ladder)
 	     (return-from demo-reach-ladder-spline-interpole nil)
 	     ))
@@ -528,7 +528,7 @@ roseus spline-interpole-test.l
 (demo-reach-ladder-spline-interpole)
 ;; (init-pose) (demo-motion-sequence :loop-max 2)
 
-(load "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsknts-interface.l")
+(load "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsknts-interface.lisp")
 (hrp2jsknts-init)
 
 (progn (init-pose) (send *robot* :reset-manip-pose) (send *robot* :arms :shoulder-p :joint-angle 0))
@@ -552,7 +552,7 @@ roseus spline-interpole-test.l
 (send *ri* :start-impedance :arms :m-p 20 :d-p 10000 :k-p 0.1)
 
 
-(require "package://hrpsys_gazebo_tutorials/euslisp/hand-command-publisher.l")
+(require "package://hrpsys_gazebo_tutorials/euslisp/hand-command-publisher.lisp")
 (setq *hrp2* *robot*)
 (send *ri* :init-hand)
 

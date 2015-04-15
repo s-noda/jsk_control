@@ -1,5 +1,5 @@
 
-(require "bspline.l")
+(require "bspline.lisp")
 
 (defun plot-bspline
   (&rest
@@ -21,7 +21,7 @@
    (pos-func :calc-coeff-vector)
    (graph
     (progn
-      (require "../../util/graph-sample.l")
+      (require "../../util/graph-sample.lisp")
       (setq *bspline-coeff-matrix-hash* (make-hash-table))
       (create-graph
        (send bspline :to-string)
@@ -66,14 +66,14 @@
     (cond
      ((and (boundp '*robot*) *robot*) *robot*)
      (t ;;
-      (require "package://aria_model/aria.l")
+      (require "package://aria_model/aria.lisp")
       (setq *robot* (aria))
-      ;;(require "package://euslisp/jskeus/irteus/demo/sample-robot-model.l")
+      ;;(require "package://euslisp/jskeus/irteus/demo/sample-robot-model.lisp")
       ;;(setq *robot* (instance sample-robot :init))
       (objects (list *robot*))
       *robot*)))
    (init (progn
-	   (require "package://eus_qp/euslisp/eiquadprog.l")
+	   (require "package://eus_qp/euslisp/eiquadprog.lisp")
 	   (send robot :reset-pose)))
    (jlist (send robot :rarm :joint-list))
    ;;(send robot :joint-list))
