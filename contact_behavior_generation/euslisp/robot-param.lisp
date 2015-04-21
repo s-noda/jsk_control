@@ -5,55 +5,50 @@
 (defvar *robot*)
 
 (case *robot-type*
-      (:hrp2jsk-gazebo
-       (load "package://hrpsys_ros_bridge/euslisp/rtm-ros-robot-interface.lisp")
-       (require :hrp2jsk "package://hrpsys_ros_bridge_tutorials/models/hrp2jsk.lisp")
-       (require :hrp2jsk-utils "package://jsk_hrpsys_ros_bridge/euslisp/hrp2jsk-utils.lisp")
-       (setq *robot* (instance hrp2jsk-robot :init)))
+      ;; (:hrp2jsk-gazebo
+      ;;  (load "package://hrpsys_ros_bridge/euslisp/rtm-ros-robot-interface.lisp")
+      ;;  (require :hrp2jsk "package://hrpsys_ros_bridge_tutorials/models/hrp2jsk.lisp")
+      ;;  (require :hrp2jsk-utils "package://jsk_hrpsys_ros_bridge/euslisp/hrp2jsk-utils.lisp")
+      ;;  (setq *robot* (instance hrp2jsk-robot :init)))
       (:hrp2jsk-collada
-       (require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsk-interface.lisp")
-       ;;(require :hrp2jsk "package://hrpsys_ros_bridge_tutorials/models/hrp2jsk.lisp")
+       (require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsk-interface.l")
        (setq *robot* (instance hrp2jsk-robot :init)))
       (:hrp2jsknt-collada
-       ;;(require :hrp2jsknt "package://hrpsys_ros_bridge_tutorials/models/hrp2jsknt.lisp")
-       (require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsknt-interface.lisp")
+       (require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsknt-interface.li")
        (setq *robot* (instance hrp2jsknt-robot :init))
        )
       (:hrp2jsknts-collada
-       (require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsknts-interface.lisp")
-       ;;(require :hrp2jsknts "package://hrpsys_ros_bridge_tutorials/models/hrp2jsknts.lisp")
+       (require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsknts-interface.l")
        (setq *robot* (instance hrp2jsknts-robot :init))
        )
       (:staro
-       ;;(require "package://hrpsys_ros_bridge_tutorials/models/staro.lisp")
-       (require "package://jsk_hrpsys_ros_bridge/euslisp/staro-interface.lisp")
+       (require "package://hrpsys_ros_bridge_tutorials/euslisp/staro-interface.l")
        (setq *robot* (staro))
-       ;; (send-all (send *robot* :joint-list) :max-joint-torque 300)
        )
-      (:hrp2jsk
-       (setq *robot* (hrp2jsk-simple-detail)))
-      (:hrp2jsknts
-       (setq *robot* (hrp2jsknts-simple-detail)))
-      (:hrp2jsknt
-       (setq *robot* (hrp2jsknt-simple-detail)))
-      (:atlas
-       (require "package://hrpsys_gazebo_atlas/euslisp/atlas-model.lisp")
-       (require "my-util.lisp")
-       (setq *robot* (atlas-with-hand))
-       ;; (send-all (send *robot* :joint-list) :max-joint-torque 700)
-       (defun init-pose
-	 (&rest args)
-	 (send *robot* :reset-manip-pose)
-	 (send *sandia_hand_left* :grasp-pose)
-	 (send *sandia_hand_right* :grasp-pose)
-	 (send (car (send *robot* :links)) :newcoords
-	       (make-coords
-		:pos
-		(float-vector
-		 -200 0
-		 (aref (v- (send *robot* :worldpos)
-			   (send *robot* :rleg :end-coords :worldpos)) 2)))))
-       )
+      ;; (:hrp2jsk
+      ;;  (setq *robot* (hrp2jsk-simple-detail)))
+      ;; (:hrp2jsknts
+      ;;  (setq *robot* (hrp2jsknts-simple-detail)))
+      ;; (:hrp2jsknt
+      ;;  (setq *robot* (hrp2jsknt-simple-detail)))
+      ;; (:atlas
+      ;;  (require "package://hrpsys_gazebo_atlas/euslisp/atlas-model.lisp")
+      ;;  (require "my-util.lisp")
+      ;;  (setq *robot* (atlas-with-hand))
+      ;;  ;; (send-all (send *robot* :joint-list) :max-joint-torque 700)
+      ;;  (defun init-pose
+      ;; 	 (&rest args)
+      ;; 	 (send *robot* :reset-manip-pose)
+      ;; 	 (send *sandia_hand_left* :grasp-pose)
+      ;; 	 (send *sandia_hand_right* :grasp-pose)
+      ;; 	 (send (car (send *robot* :links)) :newcoords
+      ;; 	       (make-coords
+      ;; 		:pos
+      ;; 		(float-vector
+      ;; 		 -200 0
+      ;; 		 (aref (v- (send *robot* :worldpos)
+      ;; 			   (send *robot* :rleg :end-coords :worldpos)) 2)))))
+      ;;  )
       (:jaxon
        ;; not implemented yet
        )
