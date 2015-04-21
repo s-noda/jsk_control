@@ -1,3 +1,5 @@
+#!/usr/bin/env roseus
+
 (defvar *robot-type* :hrp2jsknts-collada)
 
 (require "motion-sequencer.lisp")
