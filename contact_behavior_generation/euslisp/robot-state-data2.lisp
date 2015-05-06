@@ -36,6 +36,8 @@
 	  full-constrainted
 	  buf
 	  ;;
+	  robot2root-coords ;; transformation may be changed
+	  ;;
 	  ;;	  contact-links
 	  ))
 
@@ -137,10 +139,15 @@
 				     (mapcar #'(lambda (f) (setf (aref f 2) 0) f) ff)
 				     tt))))))
        1.05)))
+    ((:robot2root-coords r2c)
+     (send (copy-object (send robot :worldcoords))
+	   :transformation
+	   (send (car (send robot :links)) :copy-worldcoords)))
     ((:buf b) nil)
     (log nil)
     &allow-other-keys
     )
+   ;;
    (format *log-stream* "[rsd initialize]~%")
    (setq contact-keys ck)
    (setq contact-forces cf)
@@ -166,6 +173,9 @@
    (setq tf-error tf)
    (setq full-constrainted fc)
    (setq buf b)
+   ;;
+   (setq robot2root-coords r2c)
+   ;;
    (if log (send self :log))
    self
    )
@@ -359,11 +369,34 @@
     (pv (if (and (boundp '*irtviewer*) *irtviewer*) *irtviewer*))
     (rest nil) (friction-cone? t) (torque-draw? t)
     (offset-pos (float-vector 0 0 0)))
+   ;; check robot2root-coords transformation
+   (let* ((r2c (send (copy-object (send robot :worldcoords))
+		     :transformation
+		     (send (car (send robot :links)) :copy-worldcoords)))
+	  dif)
+     (setq dif
+	   (concatenate float-vector
+			(send robot2root-coords :difference-position r2c)
+			(send robot2root-coords :difference-rotation r2c)))
+     (cond
+      ((> (norm dif) 1)
+       (format *log-stream*
+	       "[rsd :draw] root coords transformation detected~% dif: ~A~%"
+	       dif)
+       (send (car (send robot :links))
+	     :transform
+	     (send
+	      (send (car (send robot :links)) :copy-worldcoords)
+	      :transformation
+	      (send (copy-object (send robot :worldcoords))
+		    :transform robot2root-coords :local)
+	      :local))
+       )))
    (send robot :newcoords (copy-object root-coords))
    (send robot :angle-vector angle-vector)
-					;   (mapcar
-					;    #'(lambda (k hav) (send robot k :hand-angle-vector hav))
-					;    '(:rarm :larm) hand-angle-vector)
+   ;;   (mapcar
+   ;;    #'(lambda (k hav) (send robot k :hand-angle-vector hav))
+   ;;    '(:rarm :larm) hand-angle-vector)
    (send-all contact-states :gen-friction-cone-object :offset-pos offset-pos)
    (mapcar #'(lambda (cs f)
 	       (send cs :gen-force-vector-object (subseq f 0 3) :offset-pos offset-pos))
