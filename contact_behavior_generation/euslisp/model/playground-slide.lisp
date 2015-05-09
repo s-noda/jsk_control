@@ -260,6 +260,35 @@
      )))
   )
 
+(defun drive-pose-init
+  nil
+  (cond
+   ((not (and (boundp '*robot*) *robot*))
+    (defvar *robot-type* :jaxon)
+    (require "../robot-param.lisp")
+    ))
+  (cond
+   ((not (and (boundp '*climb-obj*) *climb-obj*))
+    (defvar *climb-obj* (instance playground-slide :init))))
+  (cond
+   ((not (and (boundp '*viewer*) *viewer*))
+    (objects (list *robot* *climb-obj*))))
+  (send *robot* :angle-vector
+	(float-vector -12.1805 -23.0305 -75.0104 35.4559 8.83925 26.1011 29.7154 20.2146 -41.2042 74.219 -31.1754 -19.2137 0.0 0.0 0.0 0.0 0.0 13.4121 53.8062 -15.8257 2.91659 -86.7444 22.0082 19.9297 25.9974 0.0 55.0 20.0 15.0 -100.0 25.0 0.0 -45.0))
+  ;;(send *robot* :fix-leg-to-coords (make-coords) :rleg)
+  (send *robot* :newcoords
+	(send (copy-object (send *climb-obj* :worldcoords))
+	      :transform
+	      (make-coords
+	       :pos (float-vector 38.24 300.0 -52.946)
+	       :rpy '(4.544e-08 -0.035 9.849e-09))
+	      :local))
+  (send *viewer* :draw-objects)
+  )
+
+(drive-pose-init)
+
+
 ;; (objects (list (setq *climb-obj* (instance playground-slide :init))))
 
 #|
