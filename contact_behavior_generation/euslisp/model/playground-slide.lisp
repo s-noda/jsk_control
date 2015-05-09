@@ -286,6 +286,53 @@
   (send *viewer* :draw-objects)
   )
 
-;; (drive-pose-init)
+(defun setup-jaxon-end-coords
+  nil
+  (drive-pose-init)
+  (let* ((plink (car (send *robot* :links)))
+         (hip (instance bodyset-link :init
+                        (make-cascoords
+                         :coords
+                         (make-coords
+                          :pos (copy-seq (send plink :worldpos))
+                          ))
+                        :name "hip_sit_link"
+                        :bodies (list (make-cube 10 10 10))))
+         (joint (instance rotational-joint :init :min 0.0 :max 0.0
+                          :name "hip_fixed_joint"
+                          :child-link hip
+                          :parent-link plink))
+         (hip-end-coords
+          (make-cascoords :coords (send hip :copy-worldcoords)
+                          :parent hip
+                          :name :hip-end-coords))
+         )
+    (send *robot* :put :hip-end-coords hip-end-coords)
+    (send hip :add-joint joint)
+    (send hip :add-parent-link plink)
+    (send plink :assoc hip)
+    (send joint :set-val 'default-coords
+          (make-coords :pos (float-vector -80 0 -200)))
+    (send joint :joint-angle 0)
+    (send *robot* :set-val 'links
+          (append (send *robot* :get-val 'links) (list hip)))
+    )
+  ;;
+  (send *robot* :put :right-fist-end-coords
+	(make-cascoords
+	 :name :right-fist-end-coords
+	 :parent (send *robot* :rarm :end-coords :parent)
+	 :coords
+	 (make-coords
+	  :pos (copy-seq (send *robot* :rarm :end-coords :worldpos)))))
+  ;;
+  (send-all (list (send *robot* :get :right-fist-end-coords)
+		  (send *robot* :get :hip-end-coords))
+	    :draw-on :flush t :color (float-vector 1 0 0)
+	    :width 100 :size 100)
+  )
 
+
+;; (drive-pose-init)
+;; (setup-jaxon-end-coords)
 
