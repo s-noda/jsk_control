@@ -286,25 +286,6 @@
   (send *viewer* :draw-objects)
   )
 
-(drive-pose-init)
+;; (drive-pose-init)
 
-
-;; (objects (list (setq *climb-obj* (instance playground-slide :init))))
-
-#|
-
-(require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsknts-interface.lisp")
-(setq *robot* (instance hrp2jsknts-robot :init))
-(objects (list *robot* (setq *climb-obj* (instance playground-slide :init))))
-
-(send *robot* :fix-leg-to-coords
-      (send
-       (send (send *climb-obj* :get-val 'spin-disk-above) :copy-worldcoords)
-       :translate (float-vector 50 0 0) :world)
-      :both)
-(send (send *climb-obj* :get-val 'spin-disk-above)
-      :assoc *robot*)
-(send (car (send *climb-obj* :joint-list)) :joint-angle 30)
-(send (cadr (send *climb-obj* :joint-list)) :joint-angle -30)
-(send *viewer* :draw-objects)
 
