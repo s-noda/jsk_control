@@ -50,7 +50,8 @@
       ;; 			   (send *robot* :rleg :end-coords :worldpos)) 2)))))
       ;;  )
       (:jaxon
-       ;; not implemented yet
+       (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon-interface.l")
+       (setq *robot* (jaxon))
        )
       (t
        (require "package://euslisp/jskeus/irteus/demo/sample-robot-model.lisp")
