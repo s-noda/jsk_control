@@ -1,10 +1,13 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
+(defvar *robot-overwrite* t)
 (defvar *robot-type* :hrp2jsknts-collada)
 (defvar *robot*)
 
-(case *robot-type*
+(if (or *robot-overwrite*
+        (not (and (boundp '*robot*) *robot*)))
+    (case *robot-type*
       ;; (:hrp2jsk-gazebo
       ;;  (load "package://hrpsys_ros_bridge/euslisp/rtm-ros-robot-interface.lisp")
       ;;  (require :hrp2jsk "package://hrpsys_ros_bridge_tutorials/models/hrp2jsk.lisp")
@@ -58,7 +61,7 @@
        (setq *robot* (instance sample-robot :init))
        ;; (send-all (send *robot* :joint-list) :max-joint-torque 100)
        )
-      )
+      ))
 
 (let* ((val 300))
   (dolist (j (send *robot* :joint-list))
