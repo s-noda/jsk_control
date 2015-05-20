@@ -76,7 +76,13 @@
 	    move-target))
    (union-link-list (union (flatten link-list) nil))
    (target-coords (send-all move-target :copy-worldcoords))
-   (translation-axis (make-list (length move-target) :initial-element t))
+   (translation-axis
+    (mapcar #'(lambda (k)
+                (cond
+                 ((eq k :rarm) nil)
+                 ((eq k :larm) nil)
+                 (t t)))
+            key-list))
    (rotation-axis
     (mapcar #'(lambda (k)
                 (cond
@@ -98,14 +104,18 @@
    ;;
    (rope-initial-points
     (list (v+ (float-vector 0 -500 500)  (send (send *robot* :get :rarm-elbow-cascoords) :worldpos))
-          (v+ (float-vector 300 0 0)  (send (send *robot* :get :rarm-elbow-cascoords) :worldpos))
-          (v+ (float-vector -300 0 0)  (send (send *robot* :get :larm-elbow-cascoords) :worldpos))
+          (v+ (float-vector 0 -300 0)  (send (send *robot* :get :rarm-elbow-cascoords) :worldpos))
+          (v+ (float-vector 0 300 0)  (send (send *robot* :get :larm-elbow-cascoords) :worldpos))
           (v+ (float-vector 0 500 500)  (send (send *robot* :get :larm-elbow-cascoords) :worldpos))
           ))
+   (target-rope-length
+    (apply '+
+           (mapcar '(lambda (pos1 pos2) (norm (v- pos1 pos2)))
+                   (cdr rope-initial-points) rope-initial-points)))
    ;;
    (mt2rope-scale 1e-3)
    (rope2mt-scale 1e-2)
-   (rope2length-scale 1e-3)
+   (rope2length-scale 1e-1)
    &allow-other-keys)
   (setq *ik-convergence-user-check* nil)
   (setq
@@ -129,7 +139,16 @@
                  (cdr rope-initial-points) rope-initial-points)
                 ;;
                 (let* ((rope-points (copy-seq rope-initial-points))
+                       (rope-length
+                        (apply '+
+                               (mapcar '(lambda (pos1 pos2) (norm (v- pos1 pos2)))
+                                       (cdr rope-points) rope-points)))
+                       (rope2length-scale (* rope2length-scale 2 (- target-rope-length rope-length)))
+                       ;;
+                       rope2mt rope2length (convergence? t)
                        buf)
+                  ;; (setq
+                  ;; rope2mt
                   (mapcar
                    #'(lambda (mt ll pos pos-buf)
                        (map cons
@@ -142,22 +161,52 @@
                                      (send *robot* :calc-jacobian-from-link-list ll
                                            :translation-axis '(t) :rotation-axis '(t) :move-target mt))
                                     (concatenate float-vector
-                                                 (send (make-coords :pos pos) :difference-position mt)
+                                                 (setq buf (send (make-coords :pos pos) :difference-position mt))
                                                  (float-vector 0 0 0)))))
                        ;;
-                       (setq buf (send (make-coords :pos pos) :difference-position mt))
                        ;; (send mt :difference-position (make-coords :pos pos)))
                        (dotimes (i 3)
                          (setf (aref pos-buf i)
-                               (+ (aref pos-buf i) (* rope2mt-scale (aref buf i)))))
+                               (+ (aref pos-buf i) (* 2 rope2mt-scale (aref buf i)))))
+                       buf
                        )
                    move-target link-list
                    (subseq rope-initial-points 1 (- (length rope-initial-points) 1))
                    (subseq rope-points 1 (- (length rope-points) 1)))
                   ;;
                   (mapcar
+                   #'(lambda (prv now nxt buf)
+                       (let* ((dif1 (v- now prv)) (dif2 (v- now nxt))
+                              (dx1 (scale (/ rope2length-scale (norm dif1)) dif1))
+                              (dx2 (scale (/ rope2length-scale (norm dif2)) dif2)))
+                         (dotimes (i 3)
+                           (setf (aref buf i)
+                                 (+ (aref buf i) (aref dx1 i) (aref dx2 i))))
+                         ))
+                   (butlast (butlast rope-initial-points))
+                   (cdr (butlast rope-initial-points))
+                   (cddr rope-initial-points)
+                   (cdr (butlast rope-points)))
+                  ;;
+                  ;; check convergence
+                  (format t "[check convergence] ~A~%" cnt)
+                  (mapcar #'(lambda (mt pos)
+                              (format t " rope 2 move-target: |~A| = ~A~%" (v- pos (send mt :worldpos))
+                                      (norm (v- pos (send mt :worldpos))))
+                              (setq convergence? (and convergence? (< (norm (v- pos (send mt :worldpos))) 30)))
+                              )
+                          move-target
+                          (cdr (butlast rope-initial-points)))
+                  (format t " rope length: ~A - ~A = ~A~%" target-rope-length rope-length
+                          (- target-rope-length rope-length))
+                  (setq convergence? (and convergence? (< (abs (- target-rope-length rope-length)) 30)))
+                  ;;
+                  ;; update status
+                  (mapcar
                    #'(lambda (from to) (dotimes (i 3) (setf (aref to i) (aref from i))))
                    rope-points rope-initial-points)
+                  (setq *ik-convergence-user-check*
+                        (and *ik-convergence-user-check* convergence?))
                   )
                 ;;
                 (print (coerce (send-all union-link-list :get :move-angle) float-vector))
@@ -171,6 +220,7 @@
 	    :thre thre :rthre rthre
 	    :root-link-virtual-joint-weight
 	    root-link-virtual-joint-weight
+            :warnp nil
 	    args
 	    )))
   (format t "    time: ~A~%" (send tm :stop))
