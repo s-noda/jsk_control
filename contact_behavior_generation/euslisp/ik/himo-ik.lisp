@@ -103,18 +103,20 @@
    ret
    ;;
    (rope-initial-points
-    (list (v+ (float-vector 0 -500 500)  (send (send *robot* :get :rarm-elbow-cascoords) :worldpos))
-          (v+ (float-vector 0 -300 0)  (send (send *robot* :get :rarm-elbow-cascoords) :worldpos))
-          (v+ (float-vector 0 300 0)  (send (send *robot* :get :larm-elbow-cascoords) :worldpos))
-          (v+ (float-vector 0 500 500)  (send (send *robot* :get :larm-elbow-cascoords) :worldpos))
+    (list (v+ (float-vector -100 -500 500)  (send (send *robot* :get :rarm-elbow-cascoords) :worldpos))
+          (v+ (float-vector 0 0 0)  (send (send *robot* :get :rarm-elbow-cascoords) :worldpos))
+          (v+ (float-vector 0 0 0)  (send (send *robot* :get :larm-elbow-cascoords) :worldpos))
+          (v+ (float-vector -100 500 500)  (send (send *robot* :get :larm-elbow-cascoords) :worldpos))
           ))
    (target-rope-length
-    (apply '+
-           (mapcar '(lambda (pos1 pos2) (norm (v- pos1 pos2)))
-                   (cdr rope-initial-points) rope-initial-points)))
+    (+
+     0
+     (apply '+
+            (mapcar '(lambda (pos1 pos2) (norm (v- pos1 pos2)))
+                    (cdr rope-initial-points) rope-initial-points))))
    ;;
    (mt2rope-scale 1e-3)
-   (rope2mt-scale 1e-2)
+   (rope2mt-scale 1e-3)
    (rope2length-scale 1e-1)
    &allow-other-keys)
   (setq *ik-convergence-user-check* nil)
