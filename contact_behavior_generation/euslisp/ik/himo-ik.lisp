@@ -115,9 +115,9 @@
             (mapcar '(lambda (pos1 pos2) (norm (v- pos1 pos2)))
                     (cdr rope-initial-points) rope-initial-points))))
    ;;
-   (mt2rope-scale 1e-3)
+   (mt2rope-scale 7e-3)
    (rope2mt-scale 1e-3)
-   (rope2length-scale 1e-1)
+   (rope2length-scale 4e-3)
    &allow-other-keys)
   (setq *ik-convergence-user-check* nil)
   (setq
@@ -163,7 +163,8 @@
                                      (send *robot* :calc-jacobian-from-link-list ll
                                            :translation-axis '(t) :rotation-axis '(t) :move-target mt))
                                     (concatenate float-vector
-                                                 (setq buf (send (make-coords :pos pos) :difference-position mt))
+                                                 (setq buf (send mt :difference-position
+								 (make-coords :pos pos)))
                                                  (float-vector 0 0 0)))))
                        ;;
                        ;; (send mt :difference-position (make-coords :pos pos)))
@@ -207,10 +208,9 @@
                   (mapcar
                    #'(lambda (from to) (dotimes (i 3) (setf (aref to i) (aref from i))))
                    rope-points rope-initial-points)
-                  (setq *ik-convergence-user-check*
-                        (and *ik-convergence-user-check* convergence?))
+                  (setq *ik-convergence-user-check* convergence?)
                   )
-                ;;
+		;;
                 (print (coerce (send-all union-link-list :get :move-angle) float-vector))
                 )
 	    :min min :max max
