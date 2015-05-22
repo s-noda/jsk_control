@@ -48,7 +48,8 @@
 		  (send *now-rsd* :buf :f))))
 	 (format t "[update-best-rsd] ~A~%" (send *now-rsd* :buf :f))
 	 (setq *best-rsd* *now-rsd*))))
-   (and (< *ik-convergence-user-check* 0.1) success success-buf)))
+   (and (numberp *ik-convergence-user-check*)
+	(< *ik-convergence-user-check* 0.1) success success-buf)))
 
 (defvar *prev-x*)
 (defvar *prev-f*)
@@ -415,8 +416,10 @@
 	    root-link-virtual-joint-weight
 	    args
 	    )))
-  (send *now-rsd* :buf :time (send tm :stop))
-  (send *best-rsd* :buf :time (send *now-rsd* :buf :time))
-  (format t "    time: ~A~%" (send *now-rsd* :buf :time))
-  (or *best-rsd* (if ret *now-rsd*))
+  (cond
+   (*now-rsd*
+    (send *now-rsd* :buf :time (send tm :stop))
+    (send *best-rsd* :buf :time (send *now-rsd* :buf :time))
+    (format t "    time: ~A~%" (send *now-rsd* :buf :time))
+    (or *best-rsd* (if ret *now-rsd*))))
   )
