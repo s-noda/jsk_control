@@ -56,6 +56,10 @@
        (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon-interface.l")
        (setq *robot* (jaxon))
        )
+      (:jaxon_red
+       (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
+       (setq *robot* (jaxon_red))
+       )
       (t
        (require "package://euslisp/jskeus/irteus/demo/sample-robot-model.lisp")
        (setq *robot* (instance sample-robot :init))
