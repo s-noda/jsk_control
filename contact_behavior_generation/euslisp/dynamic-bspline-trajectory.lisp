@@ -2,11 +2,11 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-(defvar *robot-type* :hrp2jsknts-collada)
+(defvar *robot-type* :jaxon)
 
 (require "motion-sequencer.lisp")
 (if (not (functionp 'float-limb-trajectory))
-    (require "dynamic-connector.l"))
+    (require "dynamic-connector.lisp"))
 (require "dynamics-motion/dynamic-torque-util.lisp")
 (require "dynamics-motion/dynamic-trajectory.lisp")
 (require "util/partition-spline/partition-spline.lisp")
