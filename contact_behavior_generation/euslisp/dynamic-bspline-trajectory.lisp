@@ -831,6 +831,7 @@
 	  ;;
 	  objective-vector-buf
 	  objective-matrix
+	  objective-matrix2
 	  ;;
 	  descrete-dynamics-param
 	  descrete-dynamics-value
@@ -1039,6 +1040,25 @@
 	    '(1 1))
 	   :dimension (+ 1 (car (last force-range))))
 	  :dimension (+ 1 (car (last force-range)))))
+   (setq objective-vector-buf
+	 (mapcar
+	  #'(lambda (bs)
+	      (instantiate float-vector
+			   (+ (send bs :recursive-order) 1)))
+	  (send self :partition-spline-list)))
+   (setq objective-matrix2
+	 (convert-vertical-coeff-matrix-for-gain-vector
+	  (convert-horizontal-coeff-matrix-for-gain-vector
+	   (matrix-append
+	    (mapcar
+	     #'(lambda (bs buf)
+		 (send bs :calc-integral-objective-coeff-matrix
+		       :n 1 :retv buf))
+	     (send self :partition-spline-list)
+	     objective-vector-buf)
+	    '(1 1))
+	   :dimension (+ 1 (car (last force-range))))
+	  :dimension (+ 1 (car (last force-range)))))
    ;;
    (mapcar
     #'(lambda (k-d-v)
@@ -1137,7 +1157,7 @@
 	 (sep
 	  (max
 	   1
-	   (round (/ (length trajectory-elem-list)
+	   (round (/ (+ (length trajectory-elem-list) 1)
 		     (* (/ *order-factor* 2.0) (length rsd-list))))
 	   ;; (round (/ (* (/ (length trajectory-elem-list) 60.0)
 	   ;; 6.0
@@ -1148,7 +1168,8 @@
 	 (apply #'append
 		(mapcar
 		 #'(lambda (traj)
-		     (if (eq 0 (mod (incf id) sep))
+		     (if (or (eq 0 (mod (incf id) sep))
+			     (eq id (- (length trajectory-elem-list) 1)))
 			 (list
 			  (send self :calc-dynamics
 				traj (send traj :get :time)
@@ -1177,7 +1198,7 @@
     (sep
      (max
       1
-      (round (/ (length trajectory-elem-list)
+      (round (/ (+ (length trajectory-elem-list) 1)
 		(* (/ *order-factor* 2.0) (length rsd-list))))
       ))
     (update? t))
@@ -1328,9 +1349,10 @@
      :ineq-scale ineq-scale
      :initial-state (setq gain-vector (instantiate float-vector (* id-max dimension)))
      :eval-weight-matrix ;; (unit-matrix (* id-max dimension)) ;;objective-matrix
-     (m+ (scale-matrix (* 1e-1 (expt 10 (/ (length rsd-list) 4.0)))
-		       objective-matrix)
-	 (unit-matrix (* id-max dimension)))
+     (m+ (scale-matrix -1e-1 objective-matrix)
+	 (m+
+	  (scale-matrix -5e+0 objective-matrix2)
+	  (scale-matrix -1e-1 (unit-matrix (* id-max dimension)))))
      :equality-matrix
      (matrix-append
       (flatten
