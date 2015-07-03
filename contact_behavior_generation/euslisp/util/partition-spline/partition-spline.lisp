@@ -1,6 +1,7 @@
 
 (require "../../math/matrix-util.lisp")
 (require "bspline.lisp")
+(require "../graph-sample.lisp")
 
 (defclass partition-spline
   :super basic-spline
@@ -241,7 +242,6 @@
        buf))
     (graph
      (progn
-       (require "../graph-sample.lisp")
        (create-graph
 	name
 	:name-list name-list
