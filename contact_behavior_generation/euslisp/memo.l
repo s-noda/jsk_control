@@ -13,7 +13,9 @@
 
 (send *irtviewer* :look-all)
 
-(setq dynamic-trajectory)
+(setq dynamic-trajectory nil)
+
+#|
 
 (setq tau-vector
       (calc-trajectory-torque
@@ -163,20 +165,20 @@
 
 (setq key-rs-list
       (append
-       (list (car (subseq *rs-list* 7000 9000)))
+       (list (car (subseq *rs-list* 7000 9400)))
        (flatten
 	(mapcar
 	 #'(lambda (a b)
 	     (if (> (norm (v- (send a :get :auto-balancer-contact-states)
 			      (send b :get :auto-balancer-contact-states)))
 		    1e-3)
-		 ;; a))
-		 (if (> (apply '+ (coerce (send b :get :auto-balancer-contact-states) cons))
-			1.5)
-		     a
-		   (list b a))))
-	 (cdr (subseq *rs-list* 7000 9000)) (subseq *rs-list* 7000 9000)))
-       (last (subseq *rs-list* 7000 9000))
+		 a))
+	 ;;(if (> (apply '+ (coerce (send b :get :auto-balancer-contact-states) cons))
+	 ;; 1.5)
+	 ;; a
+	 ;; (list b a))
+	 (cdr (subseq *rs-list* 7000 9400)) (subseq *rs-list* 7000 9400)))
+       (list (nth 9400 *rs-list*))
        ))
 
 (setq rsd-list
@@ -218,9 +220,9 @@
  dynamic-trajectory
  (gen-dynamic-trajectory
   :freq 500
-  :position-list (send-all (subseq *rs-list* 7000 9000) :get
+  :position-list (send-all (subseq *rs-list* 7000 9400) :get
 			   :auto-balancer-reference-vector)
-  :coords-list (send-all (subseq *rs-list* 7000 9000) :get
+  :coords-list (send-all (subseq *rs-list* 7000 9400) :get
 			 :auto-balancer-reference-root-coords)
   :fix-length t
   ))
@@ -229,13 +231,69 @@
      (send elm :put :time (send rsd :time))
      elm)
  dynamic-trajectory
- (subseq *rs-list* 7000 9000))
+ (subseq *rs-list* 7000 9400))
 
+(defun decrese-list
+  (l size)
+  (let* ((buf) (step (/ (* 1.0 (length l)) size)))
+    ;; (push (car l) buf)
+    (dotimes (i size)
+      (push (nth (round (* i step)) l) buf))
+    (push (car (last l)) buf)
+    (reverse buf)))
+
+(load "dynamic-bspline-trajectory.lisp")
 (send-all (send *robot* :joint-list) :max-joint-torque 1e+3)
+(setq *order-factor* 7)
 (setq bspline
       (instance partition-spline-contact-wrench-trajectory :init
 		:rsd-list rsd-list
-		:trajectory-elem-list dynamic-trajectory
+		:trajectory-elem-list dynamic-trajectory ;;(decrese-list dynamic-trajectory 40)
+		:id-max (* 7 (length rsd-list))
 		))
 (send bspline :optimize)
+(if (boundp 'a) (send a :quit))
+(setq a (send bspline :gen-graph :name "all-force" :dim-list (send bspline :force-range) :plot-step 0.03))
+
+(setq
+ b
+ (let* ((key '(:crotch-r :crotch-p :crotch-y :knee-p :ankle-p :ankle-r))
+	(pos (mapcar
+	      #'(lambda (k)
+		  (position (send *robot* :rleg k) (send *robot* :joint-list)))
+	      key))
+	(data-org (send bspline :calc-descrete-dynamics-value :sep 10))
+	data-list
+	(graph
+	 (create-graph "torque-graph"
+		       :name-list (send-all key :pname)
+		       :data-list
+		       (mapcar
+			#'(lambda (pos)
+			    (mapcar
+			     #'(lambda (data)
+				 (float-vector (cdr (assoc :time data))
+					       (aref (cdr (assoc :torque data)) pos)))
+			     data-org))
+			pos)))
+	)
+   (send graph :fit-draw)
+   graph))
+
+(setq *time-force-vector* (send-all (send a :data) :data))
+(setq *time-torque-vector* (send-all (send b :data) :data))
+(dump-loadable-structure "time-force-vector.l" *time-force-vector*)
+(dump-loadable-structure "time-torque-vector.l" *time-torque-vector*)
+
+(let* ((key '(:crotch-r :crotch-p :crotch-y :knee-p :ankle-p :ankle-r)))
+  (mapcar
+   #'(lambda (k dl)
+       (format t "~A ~A~%"
+	       k
+	       (apply 'max (mapcar 'abs (mapcar #'(lambda (d) (aref d 1)) dl)))))
+   key *time-torque-vector*))
+
+;; (setq b (send a :data))
+;; (dump-loadable-structure "f.dat" b)
 ;; (send bspline :gen-graph :name "force-graph" :dim-list (send bspline :force-range))
+;; (send bspline :gen-graph :name "all-force" :dim-list (send bspline :force-range))
