@@ -1,5 +1,5 @@
-#-:jsk (jsk)
-#-:rbrain-basic (rbrain)
+;; #-:jsk (jsk)
+;; #-:rbrain-basic (rbrain)
 
 (require "graph-sample.lisp")
 (unless (boundp '*gp*)(setq *gp* (gnuplot)))
