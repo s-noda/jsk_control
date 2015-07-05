@@ -839,6 +839,7 @@
 	  angle-vector-root-coords-vector-trajectory
 	  ;;
 	  force-gradient-param
+	  descrete-constraints-sep
 	  ))
 (defmethod partition-spline-contact-wrench-trajectory
   (:init
@@ -979,6 +980,12 @@
 	:x-min x-min :x-max x-max :rsd-list rsd-list
 	:freq (if static? 0 freq) ;;freq
 	:animate-time 1.0))))
+    (descrete-constraints-sep
+     (max
+      1
+      (round (/ (+ (length trajectory-elem-list) 1)
+		(* (/ *order-factor* 2.0) (length rsd-list))))
+      ))
     &allow-other-keys
     )
    ;; (format t " trajectory-elem-list = ~A~%" trajectory-elem-list)
@@ -1154,16 +1161,7 @@
 	 :tm-list tm-list))
   (:calc-descrete-dynamics-param
    (&key (id -1)
-	 (sep
-	  (max
-	   1
-	   (round (/ (+ (length trajectory-elem-list) 1)
-		     (* (/ *order-factor* 2.0) (length rsd-list))))
-	   ;; (round (/ (* (/ (length trajectory-elem-list) 60.0)
-	   ;; 6.0
-	   ;; (- x-max x-min))
-	   ;; (length rsd-list)))
-	   )))
+	 (sep descrete-constraints-sep))
    (setq descrete-dynamics-param
 	 (apply #'append
 		(mapcar
@@ -1195,12 +1193,7 @@
 		 trajectory-elem-list))))
   (:calc-descrete-dynamics-value
    (&key
-    (sep
-     (max
-      1
-      (round (/ (+ (length trajectory-elem-list) 1)
-		(* (/ *order-factor* 2.0) (length rsd-list))))
-      ))
+    (sep descrete-dynamics-param)
     (update? t))
    (if update? (send self :calc-descrete-dynamics-param :sep sep))
    (setq descrete-dynamics-value
