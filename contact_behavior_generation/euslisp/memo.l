@@ -163,6 +163,9 @@
        key val)
   )
 
+
+;; model based force line
+
 (setq key-rs-list
       (append
        (list (car (subseq *rs-list* 7000 9400)))
@@ -244,12 +247,13 @@
 
 (load "dynamic-bspline-trajectory.lisp")
 (send-all (send *robot* :joint-list) :max-joint-torque 1e+3)
-(setq *order-factor* 7)
+(setq *order-factor* 20)
 (setq bspline
       (instance partition-spline-contact-wrench-trajectory :init
 		:rsd-list rsd-list
 		:trajectory-elem-list dynamic-trajectory ;;(decrese-list dynamic-trajectory 40)
-		:id-max (* 7 (length rsd-list))
+		;; :id-max (* 7 (length rsd-list))
+		;; :descrete-constraints-sep 21
 		))
 (send bspline :optimize)
 (if (boundp 'a) (send a :quit))
@@ -284,6 +288,25 @@
 (setq *time-torque-vector* (send-all (send b :data) :data))
 (dump-loadable-structure "time-force-vector.l" *time-force-vector*)
 (dump-loadable-structure "time-torque-vector.l" *time-torque-vector*)
+
+(send a :set-data
+      (list (nth 2 (send a :data))
+	    (nth 8 (send a :data))))
+(send (car (send a :data)) :name "right leg")
+(send (cadr (send a :data)) :name "left leg")
+(send a :set-range
+      (float-vector (send bspline :x-min) -100)
+      (float-vector (send bspline :x-max) 1400))
+(send a :simple-draw-with-line)
+
+(send b :set-range
+      (float-vector (send bspline :x-min) -250)
+      (float-vector (send bspline :x-max) 400))
+(send b :simple-draw-with-line)
+
+(require "util/gp-util.lisp")
+(graph-panel2gp-graph a :xlabel "Time [sec]" :ylabel "Wrench" :ratio 0.4 :save? "contact_wrench.eps")
+(graph-panel2gp-graph b :xlabel "Time [sec]" :ylabel "Torque [Nm]" :ratio 0.7 :save? "rleg_torque.eps")
 
 (let* ((key '(:crotch-r :crotch-p :crotch-y :knee-p :ankle-p :ankle-r)))
   (mapcar
