@@ -1,4 +1,3 @@
-
 (require "bspline.lisp")
 
 (defun plot-bspline
@@ -66,8 +65,8 @@
     (cond
      ((and (boundp '*robot*) *robot*) *robot*)
      (t ;;
-      (require "package://aria_model/aria.lisp")
-      (setq *robot* (aria))
+      (require "package://euslisp/jskeus/irteus/demo/sample-robot-model.l")
+      (setq *robot* (instance sample-robot :init))
       ;;(require "package://euslisp/jskeus/irteus/demo/sample-robot-model.lisp")
       ;;(setq *robot* (instance sample-robot :init))
       (objects (list *robot*))
@@ -233,3 +232,4 @@
     )
   )
 
+;; (dolist (arm (send *robot* :rarm :links)) (dolist (b (append (send *robot* :head :links) (send *robot* :torso :links))) (print (pqp-collision-distance arm b))))
