@@ -438,24 +438,23 @@
     (if optimize?
 	(let ((ret (instantiate float-vector (* id-max dimension))))
 	  (require "package://eus_qp/euslisp/eiquadprog.lisp")
-	  (format t "[minjerk-interpole]~% D:~A, N:~A, M:~A, x E [~A ~A]~% pos: ~A/~A, vel: ~A/~A, acc: ~A/~A~%"
+	  (format debug? "[minjerk-interpole]~% D:~A, N:~A, M:~A, x E [~A ~A]~% pos: ~A/~A, vel: ~A/~A, acc: ~A/~A~%"
 		  dimension recursive-order id-max x-min x-max
 		  (length pos-coeff-list) (length (flatten (list mid-pos start-pos end-pos)))
 		  (length vel-coeff-list) (length (flatten (list mid-vel start-vel end-vel)))
 		  (length acc-coeff-list) (length (flatten (list mid-acc start-acc end-acc))))
 	  (or
-	   (bench
-	    (funcall
-	     solve-qp-func
-	     :initial-state ret
-	     :eval-weight-matrix
-	     (m+ delta-input-objective
-		 (convert-vertical-coeff-matrix-for-gain-vector
-		  (convert-horizontal-coeff-matrix-for-gain-vector
-		   objective-matrix :dimension dimension)
-		  :dimension dimension))
-	     :equality-matrix pos-coeff-matrix
-	     :equality-vector pos-vector))
+	   (funcall
+	    solve-qp-func
+	    :initial-state ret
+	    :eval-weight-matrix
+	    (m+ delta-input-objective
+		(convert-vertical-coeff-matrix-for-gain-vector
+		 (convert-horizontal-coeff-matrix-for-gain-vector
+		  objective-matrix :dimension dimension)
+		 :dimension dimension))
+	    :equality-matrix pos-coeff-matrix
+	    :equality-vector pos-vector)
 	   ret))
       (transform (pseudo-inverse-loop pos-coeff-matrix) pos-vector)))
    (gain-matrix (send bspline :convert-gain-vector-to-gain-matrix gain-vector))
