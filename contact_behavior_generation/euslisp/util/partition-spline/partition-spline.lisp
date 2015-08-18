@@ -349,6 +349,8 @@
   (&rest
    args
    &key
+   (debug? t)
+   ;;
    (dimension 1)
    (id-max 8)
    (recursive-order (make-list dimension :initial-element 3))
@@ -459,7 +461,6 @@
       (transform (pseudo-inverse-loop pos-coeff-matrix) pos-vector)))
    (gain-matrix (send bspline :convert-gain-vector-to-gain-matrix gain-vector))
    ;;
-   (debug? t)
    buf
    (split-cnt 10)
    (print-x-step (/ 1.0 split-cnt))
@@ -467,10 +468,32 @@
    (output-stream debug?)
    &allow-other-keys
    )
-  (if debug? (send bspline :get-descrete-points
-		   :print-x-step print-x-step
-		   :print-tm print-tm
-		   :output-stream output-stream))
+  (cond
+   (debug?
+    ;; (format t " -- objective ~A~%"
+    ;; 	    (v.
+    ;; 	     gain-vector
+    ;; 	     (transform
+    ;; 	      (m+ delta-input-objective
+    ;; 		  (convert-vertical-coeff-matrix-for-gain-vector
+    ;; 		   (convert-horizontal-coeff-matrix-for-gain-vector
+    ;; 		    objective-matrix :dimension dimension)
+    ;; 		   :dimension dimension))
+    ;; 	      gain-vector)))
+    ;; (format t " -- objective ~A~%"
+    ;; 	    (apply
+    ;; 	     '+
+    ;; 	     (let* ((id -1))
+    ;; 	       (mapcar
+    ;; 		#'(lambda (b)
+    ;; 		    (v. (matrix-row (send bspline :gain-matrix) (incf id))
+    ;; 			(transform (send b :calc-integral-objective-coeff-matrix :n n)
+    ;; 				   (matrix-row (send bspline :gain-matrix) id))))
+    ;; 		(send bspline :partition-spline-list)))))
+    (send bspline :get-descrete-points
+	  :print-x-step print-x-step
+	  :print-tm print-tm
+	  :output-stream output-stream)))
   bspline
   )
 
