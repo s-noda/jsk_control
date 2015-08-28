@@ -261,7 +261,7 @@
 
 (setq
  b
- (let* ((key '(:crotch-r :crotch-p :crotch-y :knee-p :ankle-p :ankle-r))
+ (let* ((key '(:crotch-y :crotch-r :crotch-p :knee-p :ankle-p :ankle-r))
 	(pos (mapcar
 	      #'(lambda (k)
 		  (position (send *robot* :rleg k) (send *robot* :joint-list)))
@@ -277,7 +277,7 @@
 			    (mapcar
 			     #'(lambda (data)
 				 (float-vector (cdr (assoc :time data))
-					       (aref (cdr (assoc :torque data)) pos)))
+					       (* -1 (aref (cdr (assoc :torque data)) pos))))
 			     data-org))
 			pos)))
 	)
@@ -300,7 +300,7 @@
 (send a :simple-draw-with-line)
 
 (send b :set-range
-      (float-vector (send bspline :x-min) -250)
+      (float-vector (send bspline :x-min) -400)
       (float-vector (send bspline :x-max) 400))
 (send b :simple-draw-with-line)
 

@@ -420,7 +420,7 @@
 				(send robot :rarm :links)
 				(send robot :larm :links)))
 			 #F(0.2 0.2 0.2 5 5 5))
-			(t #F(1 1 1 10 10 10))))
+			(t (scale 100 #F(1 1 1 10 10 10)))))
 		   contact-states)))))
    (weight-matrix (diag weight-vector))
    ;; (weight-matrix-1 (pseudo-inverse weight-matrix))

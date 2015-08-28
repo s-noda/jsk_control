@@ -65,6 +65,7 @@
 	      "set terminal postscript eps enhanced color solid")
 	(send *gp* :command
 	      (format nil "set output \'~A\'" save?))))
+  (send *gp* :command (format nil "set grid"))
   (send *gp* :command (format nil "set title \'~A\'" name))
   (setq data-list
 	(mapcar
