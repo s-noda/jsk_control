@@ -147,9 +147,11 @@
 	     (max 30))
   (cond
    ((null obj)
-    (send *robot* :head :look-at
-	  (v+ (send *robot* :head :end-coords :worldpos)
-	      (scale 1000 #F(1 0 0)))) ;head-min-dir)))
+    (if (and (find-method *robot* :head)
+	     (send *robot* :head))
+	(send *robot* :head :look-at
+	      (v+ (send *robot* :head :end-coords :worldpos)
+		  (scale 1000 #F(1 0 0)))))
     nil)
    ((plusp (cdr (assoc :distance (car obj))))
     (collision-resolve-move (cdr obj)))
