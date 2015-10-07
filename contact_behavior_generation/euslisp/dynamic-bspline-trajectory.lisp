@@ -1193,7 +1193,7 @@
 		 trajectory-elem-list))))
   (:calc-descrete-dynamics-value
    (&key
-    (sep descrete-dynamics-param)
+    (sep descrete-constraints-sep)
     (update? t))
    (if update? (send self :calc-descrete-dynamics-param :sep sep))
    (setq descrete-dynamics-value
