@@ -144,8 +144,9 @@
 	  (map float-vector
 	       #'(lambda (v) (* ineq-scale (+ v ineq-offset)))
 	       inequality-max-vector))
-    (format t "[solve-qp] ~A scale constrains -->~% ~A * (org + ~A)~%"
-	    trial-cnt ineq-scale ineq-offset)
+    (if debug?
+	(format t "[solve-qp] ~A scale constrains -->~% ~A * (org + ~A)~%"
+		trial-cnt ineq-scale ineq-offset))
     )
   (setf (aref trial-cnt-feedback 0) trial-cnt)
   ret
