@@ -829,9 +829,20 @@
 		   (format nil "~A/euslisp/gazebo_standup/facefall/best.rsd"
 			   (ros::rospack-find "tmp_hrpsys_util")))))
       (send *best-facefall* :draw :friction-cone? nil)
+      (dolist (k '(:rarm :larm))
+	(let* ((tag (read-from-string (format nil "~A-simple-floor-end-coords" k)))
+	       (cc (make-cascoords
+		    :coords (make-coords :pos (copy-seq (send *robot* k :end-coords :worldpos)))
+		    :parent (send *robot* k :end-coords :parent)
+		    :name tag)))
+	  (send *robot* :put tag cc)))
       (setq *facefall-contact-state*
 	    (let* ((name '(:rarm :larm :rleg :lleg))
-		   (cc (mapcar #'(lambda (k) (send *robot* k :end-coords)) name))
+		   (cc ;;(mapcar #'(lambda (k) (send *robot* k :end-coords)) name))
+		    (list (send *robot* :get :rarm-simple-floor-end-coords)
+			  (send *robot* :get :larm-simple-floor-end-coords)
+			  (send *robot* :rleg :end-coords)
+			  (send *robot* :lleg :end-coords)))
 		   (tc (send-all cc :copy-worldcoords))
 		   (cn (mapcar #'(lambda (a) (float-vector 0 0 1)) name))
 		   (ux (mapcar #'(lambda (a) 0.5) name))
