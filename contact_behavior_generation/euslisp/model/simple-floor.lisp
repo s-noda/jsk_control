@@ -64,7 +64,9 @@
      (list (list (cons :name :rarm)
 		 (cons :cascoords
 		       (list
-			(send *robot* :rarm :end-coords)
+			(or
+			 (send *robot* :get :rarm-simple-floor-end-coords)
+			 (send *robot* :rarm :end-coords))
 			;; (link2cascoords :rarm (send *robot* :rarm :elbow-p :child-link))
 			))
 		 (cons :translation-axis '(t t))
@@ -72,7 +74,9 @@
 	   (list (cons :name :larm)
 		 (cons :cascoords
 		       (list
-			(send *robot* :larm :end-coords)
+			(or
+			 (send *robot* :get :larm-simple-floor-end-coords)
+			 (send *robot* :larm :end-coords))
 			;; (link2cascoords :larm (send *robot* :larm :elbow-p :child-link))
 			))
 		 (cons :translation-axis '(t t))
