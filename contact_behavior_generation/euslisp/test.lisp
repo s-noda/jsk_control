@@ -4,6 +4,9 @@
 (require "motion-sequencer.lisp")
 (require "dynamic-connector.lisp")
 
+;; (require "motion-planners/motion-planner.lisp")
+;; (defun demo-motion-sequence (&rest args) (apply 'demo-motion-sequence2 (append (list :error-thre 1.1) args)))
+
 (defun test-proc
   (key)
   (case key
