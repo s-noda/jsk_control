@@ -295,7 +295,7 @@
     (send *viewer* :draw-objects)
     (send torque :buf :gain *simple-calc-torque-gradient-gain*)
     (setq init (car (last *rsd-queue*)))
-    (send init :draw :rest (list *human-ball*))
+    ;; (send init :draw :rest (list *human-ball*))
     (setq *rsd-queue* nil)
     (setq
      brlv
