@@ -4,8 +4,7 @@
 (require "motion-sequencer.lisp")
 (require "dynamic-connector.lisp")
 
-;; (require "motion-planners/motion-planner.lisp")
-;; (defun demo-motion-sequence (&rest args) (apply 'demo-motion-sequence2 (append (list :error-thre 1.1) args)))
+;; (require "motion-planners/motion-planner.lisp") (defun demo-motion-sequence (&rest args) (apply 'demo-motion-sequence2 (append (list :error-thre 1.1) args)))
 
 (defun test-proc
   (key)
@@ -73,9 +72,11 @@
 		    :remove-limb :hip
 		    :all-limbs '(:hip)
 		    :now-rsd
-		    (instance robot-state-data2 :init :contact-states
-			      (cons (now-hip-contact-state)
-				    (now-contact-state :limb-keys '(:rleg :lleg))))
+		    ;;(instance robot-state-data2 :init :contact-states (cons (now-hip-contact-state) (now-contact-state :limb-keys '(:rleg :lleg))))
+		    (optimize-brli :contact-states
+				   (now-contact-state :limb-keys '(:rleg :lleg))
+				   :rest-contact-states
+				   (list (now-hip-contact-state)))
 		    :tmax-hand-rate 1.0
 		    :tmax-leg-rate 1.0
 		    :log-file (format nil "~A/four-leg-seat" *log-root*)
@@ -108,21 +109,26 @@
 		      ))
 	      (rsd (demo-motion-sequence-with-timer
 		    :ik-debug-view *debug*
-		    :now-rsd (instance robot-state-data2 :init
-				       :contact-states *facefall-contact-state*)
-		    :remove-limb :rleg
+		    :now-rsd
+		    ;;(instance robot-state-data2 :init
+		    ;; :contact-states *facefall-contact-state*)
+		    (optimize-brli :contact-states *facefall-contact-state*)
+		    :remove-limb :rarm
 		    ;; :log-stream t
 		    ;;:loop-max 8
 		    :loop-max
 		    '(lambda (cnt &rest args)
 		       (let* ((ret (simple-fullbody :target (list (list (cons :target :rarm)) (list (cons :target :larm)) (list (cons :target :rleg)) (list (cons :target :lleg))) :debug-view nil :stop 30 :centroid-thre 100 :warnp nil)))
 			 (if ret (send *viewer* :draw-objects)) ret))
+		    ;; :cs-filter-func '(lambda (&rest args) (car args))
+		    ;; :rms-loop-max 30
 		    :tmax-hand-rate 1.0
 		    :tmax-leg-rate 1.0
 		    :log-file (format nil "~A/simple-floor" *log-root*)
 		    )))
 	 (cond
-	  ((listp rsd)
+	  ((and (listp rsd)
+		(find-if '(lambda (rsd) (subclassp (class rsd) robot-state-data2)) rsd))
 	   (rsd-play :file (format nil "~A/simple-floor.rsd" *log-root*) :auto? t)
 	   (quit-graph)
 	   ))
