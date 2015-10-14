@@ -44,13 +44,17 @@
 	((or
 	  (and *now-rsd* (not *best-rsd*))
 	  (and *best-rsd* *now-rsd*
-	       (not (or (send *best-rsd* :full-constrainted)
-			(send *best-rsd* :buf :contact-wrench-optimize-skip)))
-	       (or (send *now-rsd* :full-constrainted)
-		   (send *now-rsd* :buf :contact-wrench-optimize-skip)))
+	       (not (and (or (send *best-rsd* :full-constrainted)
+			     (send *best-rsd* :buf :contact-wrench-optimize-skip))
+			 (numberp (send *best-rsd* :buf :f))))
+	       (and (or (send *now-rsd* :full-constrainted)
+			(send *now-rsd* :buf :contact-wrench-optimize-skip))
+		    (numberp (send *now-rsd* :buf :f))))
 	  (and *best-rsd* *now-rsd*
 	       (or (send *now-rsd* :full-constrainted)
 		   (send *now-rsd* :buf :contact-wrench-optimize-skip))
+	       (numberp (send *best-rsd* :buf :f))
+	       (numberp (send *now-rsd* :buf :f))
 	       (> (send *best-rsd* :buf :f)
 		  (send *now-rsd* :buf :f))))
 	 (format t "[update-best-rsd] ~A~%" (send *now-rsd* :buf :f))
@@ -148,7 +152,9 @@
 
 (defvar *simple-calc-torque-gradient-gain* 1.0)
 (defun simple-calc-torque-gradient
-  (&key
+  (&rest
+   args
+   &key
    (robot (copy-object *robot*))
    (key-list '(:rleg :lleg))
    (wrench-key-list key-list)

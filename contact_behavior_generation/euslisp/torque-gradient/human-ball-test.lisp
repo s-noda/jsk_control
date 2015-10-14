@@ -265,61 +265,74 @@
      0 (length key-list)))
    (debug-view :no-message)
    (callback nil)
-   (gain1) (gain2))
-  (let* ((inital-av) init torque brlv)
+   (gain1) (gain2)
+   (rest-torque-ik-args)
+   torque-ik-args
+   )
+  (let* ((inital-av) init-rsd torque brlv)
     (setq *ik-convergence-user-check* 0.0)
-    (while (null
-	    (setq inital-av
-		  (print (human-ball-pose :key-list key-list)))))
+    (setq torque-ik-args
+	  (list :key-list key-list
+		:wrench-key-list key-list
+		:init nil
+		:null-max 0.3
+		:gtol 0.001
+		:stop 100
+		:linear-brli nil
+		:debug-view debug-view
+		;;:root-link-virtual-joint-weight
+		;;(float-vector 0.1 0.1 0.1 0.01 0.01 0.01)
+		:rotation-axis rotation-axis))
+    (while (or (null
+		(setq inital-av
+		      (print (human-ball-pose :key-list key-list))))
+	       (progn
+		 (apply 'simple-calc-torque-gradient
+			(append rest-torque-ik-args torque-ik-args))
+		 (not
+		  (or (send *now-rsd* :full-constrainted)
+		      (send *now-rsd* :buf :contact-wrench-optimize-skip))))))
     (setq inital-av (copy-object inital-av))
+    (setq init-rsd *now-rsd*)
+    (setq torque-ik-args
+	  (append torque-ik-args
+		  (list :now-rsd init-rsd
+			:best-rsd init-rsd)))
     ;;(send init :draw :rest (list *human-ball*))
     (setq *rsd-queue* nil)
     (setq
      torque
-     (test-torque-ik
-      :key-list key-list
-      :wrench-key-list key-list
-      :init nil
-      :null-max 0.3
-      :gtol 0.001
-      :mode :normal
-      :stop 100
-      :linear-brli nil
-      :debug-view debug-view
-      ;;:root-link-virtual-joint-weight
-      ;;(float-vector 0.1 0.1 0.1 0.01 0.01 0.01)
-      :rotation-axis rotation-axis
-      :gain gain1))
+     (apply
+      'test-torque-ik
+      (append
+       rest-torque-ik-args
+       torque-ik-args
+       (list :mode :normal :gain gain1))))
     (if (not torque)
 	(return-from test-sphere-human-ball nil))
     (send *viewer* :draw-objects)
     (send torque :buf :gain *simple-calc-torque-gradient-gain*)
-    (setq init (car (last *rsd-queue*)))
+    ;; (setq init (car (last *rsd-queue*)))
     ;; (send init :draw :rest (list *human-ball*))
     (setq *rsd-queue* nil)
     (setq
      brlv
-     (test-torque-ik
-      :key-list key-list
-      :wrench-key-list key-list
-      :init nil
-      :null-max 0.3
-      :gtol 0.001
-      :mode :force-approximation
-      :stop 100
-      :linear-brli nil
-      :debug-view debug-view
-      :root-link-virtual-joint-weight
-      (float-vector 0.1 0.1 0.1 0.01 0.01 0.01)
-      :additional-weight-list
-      (mapcar
-       #'(lambda (l) (list l 0.1))
-       (remove-if #'(lambda (j) (null (send j :joint)))
-		  (send *robot* :torso :links)))
-      :rotation-axis rotation-axis
-      :gain gain2
-      :best-rsd init
-      ))
+     (apply
+      'test-torque-ik
+      (append
+       rest-torque-ik-args
+       torque-ik-args
+       (list
+	:mode :force-approximation
+	:root-link-virtual-joint-weight
+	(float-vector 0.1 0.1 0.1 0.01 0.01 0.01)
+	:additional-weight-list
+	(mapcar
+	 #'(lambda (l) (list l 0.1))
+	 (remove-if #'(lambda (j) (null (send j :joint)))
+		    (send *robot* :torso :links)))
+	:gain gain2
+	))))
     (if (not brlv)
 	(return-from test-sphere-human-ball nil))
     (send *viewer* :draw-objects)
@@ -340,20 +353,22 @@
 	     ;; (/ (norm (send brlv :torque-vector))
 	     ;; 	(norm (send torque :torque-vector)))
 	     (/ (norm (send brlv :buf :tau))
-		(norm (send init :buf :tau)))
+		(norm (send init-rsd :buf :tau)))
 	     (/ (norm (send torque :buf :tau))
-		(norm (send init :buf :tau)))
+		(norm (send init-rsd :buf :tau)))
 	     (/ (norm (send brlv :buf :tau))
 		(norm (send torque :buf :tau)))
 	     )
     (if (functionp callback) (funcall callback torque brlv))
-    (send-all (list init torque brlv) :clear)
-    (list init torque brlv)))
+    (send-all (list init-rsd torque brlv) :clear)
+    (list init-rsd torque brlv)))
 
 ;; 0.030954 ;; 0.013033
 ;; 1.814612e+05 ;; 19500.8
 (defun test-sphere-human-ball-loop
-  (&key
+  (&rest
+   args
+   &key
    (key-list '(:rleg :lleg :rarm :larm))
    (loop-max 300)
    (debug-view :no-message)
@@ -372,6 +387,7 @@
    init torq brlv
    (gain1) ;; 0.030954)
    (gain2) ;; 1.814612e+05)
+   &allow-other-keys
    )
   (setq cnt loop-max)
   (do-until-key
@@ -379,8 +395,10 @@
    (sys::gc)
    (setq
     buf
-    (test-sphere-human-ball
-     :key-list key-list :debug-view debug-view :gain1 gain1 :gain2 gain2))
+    (apply
+     'test-sphere-human-ball
+     :key-list key-list :debug-view debug-view :gain1 gain1 :gain2 gain2
+     args))
    (cond
     ((or (not buf)
 	 ;;(<
@@ -439,7 +457,8 @@
 
 #|
 
-(test-sphere-human-ball-loop :key-list '(:rleg :lleg :rarm :larm) :debug-view nil :gain1 0.530954 :gain2 1.814612e+05)
+(test-sphere-human-ball-loop :key-list '(:rleg :lleg :rarm :larm) :debug-view nil :gain1 0.530954 :gain2 1.814612e+05 :rest-torque-ik-args (list :contact-wrench-optimize? nil))
+(test-sphere-human-ball-loop :key-list '(:rleg :lleg :rarm :larm) :debug-view nil :gain1 0.530954 :gain2 1.814612e+05 :rest-torque-ik-args (list :contact-wrench-optimize? t))
 
 (dotimes (i 1000) (random 1.0))
 (setq
