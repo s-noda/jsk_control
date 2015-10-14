@@ -439,6 +439,8 @@
 
 #|
 
+(test-sphere-human-ball-loop :key-list '(:rleg :lleg :rarm :larm) :debug-view nil :gain1 0.530954 :gain2 1.814612e+05)
+
 (dotimes (i 1000) (random 1.0))
 (setq
  *test*

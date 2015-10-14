@@ -44,6 +44,13 @@
 	((or
 	  (and *now-rsd* (not *best-rsd*))
 	  (and *best-rsd* *now-rsd*
+	       (not (or (send *best-rsd* :full-constrainted)
+			(send *best-rsd* :buf :contact-wrench-optimize-skip)))
+	       (or (send *now-rsd* :full-constrainted)
+		   (send *now-rsd* :buf :contact-wrench-optimize-skip)))
+	  (and *best-rsd* *now-rsd*
+	       (or (send *now-rsd* :full-constrainted)
+		   (send *now-rsd* :buf :contact-wrench-optimize-skip))
 	       (> (send *best-rsd* :buf :f)
 		  (send *now-rsd* :buf :f))))
 	 (format t "[update-best-rsd] ~A~%" (send *now-rsd* :buf :f))
@@ -98,19 +105,28 @@
     (now-contact-state :limb-keys
 		       (set-difference key-list wrench-key-list)))
    (debug? nil)
+   (contact-wrench-optimize? nil)
    &allow-other-keys)
   (setq
    ret
-   (optimize-brli
-    :robot robot
-    :linear-brli nil
-    :eiquadprog-function 'solve-eiquadprog-raw ;;-with-error
-    :contact-states contact-states
-    :rest-contact-states rest-contact-states
-    :ret-buf nil
-    :debug? nil
+   (apply
+    #'optimize-brli
+    (append
+     (list
+      :robot robot
+      :linear-brli nil
+      :eiquadprog-function 'solve-eiquadprog-raw ;;-with-error
+      :contact-states contact-states
+      :rest-contact-states rest-contact-states
+      :debug? nil)
+     (if contact-wrench-optimize? nil (list :ret-buf nil)))
     ))
   (setq *now-rsd* ret)
+  (if contact-wrench-optimize?
+      (if (not (send *now-rsd* :full-constrainted))
+	  (progn (setq *ik-convergence-user-check* 0.0)
+		 (print 'not-full-constrainted-rsd)))
+    (send *now-rsd* :buf :contact-wrench-optimize-skip t))
   (setq *rsd-queue*
 	(subseq (cons *now-rsd* *rsd-queue*) 0 100))
   (setq buf
@@ -190,7 +206,7 @@
 	   :6dof? 6dof?
 	   :debug? debug?))
 	 Jtau move g)
-    (print tau)
+    ;; (print tau)
     (if torque-normalize?
 	(setq tau
 	      (map float-vector #'/ tau
