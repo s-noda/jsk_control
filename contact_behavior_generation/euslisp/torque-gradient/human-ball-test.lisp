@@ -1,3 +1,5 @@
+(defvar *robot-type* :hrp2jsknt-collada)
+
 (require "ik-with-torque.lisp")
 (require "package://eus_gui/graph-sample.lisp")
 
@@ -5,7 +7,8 @@
 (defvar *human-ball* (make-sphere (* 1 *ball-radius*)))
 (send *human-ball* :set-color #f(0 1 0))
 (gl::transparent *human-ball* 0.3)
-(send *pickview* :viewer :viewsurface :bg-color #F(1 1 1))
+;; (send *irtviewer* :change-background (float-vector 1 1 1))
+;; (send *pickview* :viewer :viewsurface :bg-color #F(1 1 1))
 
 (mapcar
  #'(lambda (k)
@@ -17,15 +20,16 @@
  '(:wrist-p :wrist-r :wrist-y))
 ;; (send-all (send *robot* :joint-list) :max-joint-torque 1000)
 
-(mapcar
- #'(lambda (k)
-     (send (send (send *robot* k :hand) :parent)
-	   :dissoc
-	   (send *robot* k :hand))
-     (send (send *robot* k :hand) :locate #F(0 0 0) :world)
-     ;;(gl::transparent (send *robot* k :hand) 0.0)
-     )
- '(:rarm :larm))
+;; (mapcar
+;;  #'(lambda (k)
+;;      (send (send (send *robot* k :hand) :parent)
+;; 	   :dissoc
+;; 	   (send *robot* k :hand))
+;;      (send (send *robot* k :hand) :locate #F(0 0 0) :world)
+;;      ;;(gl::transparent (send *robot* k :hand) 0.0)
+;;      )
+;;  '(:rarm :larm))
+(defvar *robot-hand* (send *robot* :links))
 
 (defun vector-matrix
   (ref &optional
@@ -96,7 +100,8 @@
   (send (car (send *robot* :links))
 	:newcoords (make-coords :pos #F(0 0 -100)))
   (send-all (send *robot* :links) :worldcoords)
-  (objects (list *robot* *human-ball*))
+  (objects (flatten (list *robot-hand* *human-ball*)))
+  (send *irtviewer* :change-background (float-vector 1 1 1))
   (let* ((move-target
 	  (mapcar
 	   #'(lambda (k) (send *robot* k :end-coords))
