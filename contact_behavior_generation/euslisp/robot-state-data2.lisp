@@ -416,6 +416,7 @@
   (:clear
    nil
    (send self :buf :slide (not (not (send self :buf :slide))))
+   (send self :buf :selected-planner nil) ;; todo
    (send-all
     (remove-if #'(lambda (cs)
 		   (not (and (class cs)
