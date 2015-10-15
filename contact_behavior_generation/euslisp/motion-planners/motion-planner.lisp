@@ -541,13 +541,24 @@
   (:rsd-list nil rsd-list))
 
 (defun sequencial-select-filter
-  (cs-list &optional ret all-cs-tag-name sequencial-select-factor-map)
+  (cs-list &optional ret all-cs-tag-name ref-order sequencial-select-factor-map)
   ;; seuqencial factor filter
+  ;; (print 'sequencial-select-filter)
+  ;; (print ret)
   (let* ((max 6)
+	 (rret (reverse (flatten ret)))
+	 (rret-tag (flatten (send-all rret :buf :remove-limb)))
 	 (keys
-	  (subseq
-	   (flatten (send-all (reverse (flatten ret)) :buf :remove-limb))
-	   0 (* max (length all-cs-tag-name))))
+	  (if ref-order
+	      (let* ((p (if (car rret-tag)
+			    (position (car rret-tag) ref-order))))
+		(reverse
+		 (if (and p (< (+ 1 p) (length ref-order)))
+		     (append (subseq ref-order (+ 1 p))
+			     (subseq ref-order 0 (+ 1 p)))
+		   ref-order)))
+	    (subseq
+	     rret-tag 0 (* max (length all-cs-tag-name)))))
 	 (len (max max (length keys)))
 	 id ret
 	 (sequence-scale
@@ -620,6 +631,7 @@
    (ik-debug-view :no-message)
    (root-link-virtual-joint-weight #F(0.1 0.1 0.1 0.1 0.5 0.5))
    (cs-filter-func 'sequencial-select-filter)
+   (ref-order nil)
    (motion-planner-names
     (list static-walk-motion-planner slide-motion-planner))
    (sequencial-select-factor-map (make-hash-table))
@@ -629,6 +641,7 @@
 				      all-cs-candidates
 				      ret
 				      all-cs-tag-name
+				      ref-order
 				      sequencial-select-factor-map
 				      )
 			   all-cs-candidates)))
