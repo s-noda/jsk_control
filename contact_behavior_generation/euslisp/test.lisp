@@ -34,6 +34,7 @@
 		    ;;(send next :buf :trajectory)))
 		    ;;(cdr (assoc :status
 		    ;;(send next :buf :trajectory)))))
+		    :ref-order '(:rarm :larm :rleg :lleg)
 		    )))
 	 (cond
 	  ((listp rsd)
@@ -140,7 +141,7 @@
 ;; start test
 
 (defvar *log-root* (format nil "log/~A" (log-surfix)))
-(defvar *ik-debug-view* nil)
+(defvar *ik-debug-view* nil) ;;:no-message)
 (unix:system (format nil "mkdir ~A" *log-root*))
 
 (test-proc :kirin-ladder)
