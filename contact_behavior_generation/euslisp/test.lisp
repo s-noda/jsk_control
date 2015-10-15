@@ -19,7 +19,7 @@
 		 (send *robot* :reset-manip-pose)
 		 (send *robot* :arms :shoulder-p :joint-angle 0)))
 	      (rsd (demo-motion-sequence-with-timer
-		    :ik-debug-view *debug*
+		    :ik-debug-view *ik-debug-view*
 		    :loop-max 8
 		    :tmax-hand-rate 0.6
 		    :tmax-leg-rate 0.6
@@ -46,7 +46,7 @@
      (cond
       ((let* ((init (demo-climb-setup :rock-wall))
 	      (rsd (demo-motion-sequence-with-timer
-		    :ik-debug-view *debug*
+		    :ik-debug-view *ik-debug-view*
 		    :loop-max 8
 		    :tmax-hand-rate 0.8
 		    :tmax-leg-rate 0.8
@@ -67,7 +67,7 @@
 		      (send *robot* :reset-manip-pose)
 		      (send *robot* :fix-leg-to-coords (make-coords))))
 	      (rsd (demo-motion-sequence-with-timer
-		    :ik-debug-view *debug*
+		    :ik-debug-view *ik-debug-view*
 		    :loop-max 2
 		    :remove-limb :hip
 		    :all-limbs '(:hip)
@@ -108,7 +108,7 @@
 		      (gen-init-rsd)
 		      ))
 	      (rsd (demo-motion-sequence-with-timer
-		    :ik-debug-view *debug*
+		    :ik-debug-view *ik-debug-view*
 		    :now-rsd
 		    ;;(instance robot-state-data2 :init
 		    ;; :contact-states *facefall-contact-state*)
@@ -121,7 +121,7 @@
 		       (let* ((ret (simple-fullbody :target (list (list (cons :target :rarm)) (list (cons :target :larm)) (list (cons :target :rleg)) (list (cons :target :lleg))) :debug-view nil :stop 30 :centroid-thre 100 :warnp nil)))
 			 (if ret (send *viewer* :draw-objects)) ret))
 		    ;; :cs-filter-func '(lambda (&rest args) (car args))
-		    ;; :rms-loop-max 30
+		    :rms-loop-max 8
 		    :tmax-hand-rate 1.0
 		    :tmax-leg-rate 1.0
 		    :log-file (format nil "~A/simple-floor" *log-root*)
@@ -140,7 +140,7 @@
 ;; start test
 
 (defvar *log-root* (format nil "log/~A" (log-surfix)))
-(defvar *debug* :no-message)
+(defvar *ik-debug-view* nil)
 (unix:system (format nil "mkdir ~A" *log-root*))
 
 (test-proc :kirin-ladder)
