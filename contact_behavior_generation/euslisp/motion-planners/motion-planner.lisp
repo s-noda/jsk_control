@@ -660,6 +660,9 @@
    comp-plan;; deep-track-call?
    greedy-search-buf tmp
    &allow-other-keys)
+  ;; remove black-listed args
+  (setq args (remove-args-values args (list :remove-limb)))
+  ;;
   (send now-rsd :draw :friction-cone? nil) ;; back track
   (if (or (not now-rsd) (not (send now-rsd :full-constrainted)))
       (return-from demo-motion-sequence2 :agry-now-rsd))
