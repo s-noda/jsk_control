@@ -463,6 +463,37 @@
 		   '(x y z a b c))))))))
   )
 
+(defun test-gradient-matrix
+  (&rest
+   args
+   &key
+   (robot *robot*)
+   (move-target (send robot :rleg :end-coords))
+   (all-link-list (send robot :link-list (send move-target :parent)))
+   ;;(joint-list (reverse (send-all link-list :joint)))
+   (all-joint-list (send-all all-link-list :joint))
+   (meter? t)
+   (debug? t)
+   (vector-length 6)
+   ;;
+   (g1 (apply 'gradient-matrix (append (list :6dof? nil) args)))
+   (g2 (send robot :calc-jacobian-from-link-list all-link-list
+	     :move-target move-target
+	     :transform-coords (make-coords)
+	     :translation-axis '(t)
+	     :rotation-axis '(t)))
+   &allow-other-keys
+   )
+  (format t "----- mine~%")
+  (format-array g1)
+  (format t "----- eus impl~%")
+  (format-array g2)
+  (format t "----- diff mat~%")
+  (format-array (m- g1 g2))
+  (format t "----- diff norm~%")
+  (print (norm (send (m- g1 g2) :get-val 'entity)))
+  )
+
 (defun gradientx2-vector
   (&key
    (robot *robot*)
@@ -1067,6 +1098,7 @@
 	   "[calc-torque-from-wrench-and-gradient-test]~%"
 	   "  ref=~A~%"
 	   "  ans=~A~%"
+	   "  dif=~A~%"
 	   "  dif=~A~%")
 	  (progn
 	    (send robot :torque-vector
@@ -1084,7 +1116,8 @@
 		  :debug? t
 		  :6dof? 6dof?
 		  )
-		 joint-list))
+		 joint-list :6dof? 6dof?))
+	  (coerce (map cons #'- ref ans) float-vector)
 	  (norm2 (coerce (map cons #'- ref ans) float-vector))))
 
 ;; for test
