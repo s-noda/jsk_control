@@ -923,14 +923,23 @@
    (link-list (send robot :link-list (send move-target :parent)))
    (joint-list (reverse (send-all link-list :joint)))
    (all-joint-list joint-list)
+   (dof (length all-joint-list))
    (6dof? t)
    (meter? t)
    (debug? nil)
    (jacobian (apply #'gradient-matrix args))
+   vbuf
    &allow-other-keys
    )
+  (if (not (vectorp vbuf))
+      (setq vbuf (instantiate float-vector (+ dof (if 6dof? 6 0)))))
   (if debug? (pm jacobian))
-  (scale -1 (transform (transpose jacobian) wrench)))
+  ;; (scale -1 (transform (transpose jacobian) wrench vbuf) vbuf)
+  (dotimes (i dof)
+    (setf (aref vbuf i)
+	  (* -1 (v. (matrix-column jacobian i) wrench))))
+  ;; (if 6dof? (setq ret (concatenate float-vector ret (float-vector 0 0 0 0 0 0))))
+  vbuf)
 
 (defun calc-torque-from-wrench-list-and-gradient
   (&rest
@@ -962,27 +971,38 @@
    ;; (wrench-list (append wrench gravity-wrench))
    ;; (move-target-list (append move-target gravity-move-target))
    ;;
+   (dof (length all-joint-list))
    (6dof? t)
    (meter? t)
    (debug? nil)
+   vbuf vbufbuf
    &allow-other-keys
    )
-  (reduce #'v+
-	  (cons
-	   (scale -1 (transform (transpose cog-jacobian) gravity-wrench))
-	   (mapcar
-	    #'(lambda (w mt)
-		(apply #'calc-torque-from-wrench-and-gradient
-		       (append
-			(list :robot robot
-			      :wrench w
-			      :move-target mt
-			      ;;:link-list link-list
-			      :all-joint-list all-joint-list
-			      :debug? debug?
-			      )
-			args)))
-	    wrench-list move-target-list))))
+  (if (not (vectorp vbuf))
+      (setq vbuf (instantiate float-vector (+ dof (if 6dof? 6 0)))))
+  (if (not (vectorp vbufbuf)) (setq vbufbuf (copy-seq vbuf)))
+  ;; (scale -1 (transform (transpose cog-jacobian) gravity-wrench vbuf) vbuf)
+  (dotimes (i dof)
+    (setf (aref vbuf i)
+	  (* -1 (v. (matrix-column cog-jacobian i) gravity-wrench))))
+  (mapcar
+   #'(lambda (w mt)
+       (apply #'calc-torque-from-wrench-and-gradient
+	      (append
+	       (list :robot robot
+		     :wrench w
+		     :move-target mt
+		     ;;:link-list link-list
+		     :all-joint-list all-joint-list
+		     :debug? debug?
+		     :vbuf vbufbuf
+		     )
+	       args))
+       (v+ vbuf vbufbuf vbuf)
+       )
+   wrench-list move-target-list)
+  vbuf
+  )
 
 ;; (defun calc-torque-from-wrench-list-and-gradient
 ;;   (&rest
@@ -1037,6 +1057,7 @@
    (wrench-list
     (mapcar #'(lambda (f m) (concatenate float-vector f m))
 	    force-list moment-list))
+   (6dof? nil)
    ref ans
    )
   (random-robot-state)
@@ -1060,7 +1081,9 @@
 		  :move-target move-target
 		  :wrench wrench-list
 		  :all-joint-list joint-list
-		  :debug? t)
+		  :debug? t
+		  :6dof? 6dof?
+		  )
 		 joint-list))
 	  (norm2 (coerce (map cons #'- ref ans) float-vector))))
 
