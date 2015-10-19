@@ -183,7 +183,9 @@
 		  :coords
 		  (copy-object (send c :worldcoords))
 		  :parent-link
-		  (send c :parent) ;;(send (send c :parent) :parent)
+		  (if (send (send c :parent) :parent-link)
+		      (send (send c :parent) :parent-link)
+		    (car (flatten (send (send c :parent) :child-links))))
 		  )))))
 	  limb-keys))
 	(contact-n
