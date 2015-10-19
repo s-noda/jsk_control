@@ -198,8 +198,8 @@
 	(ux (make-list (length limb-keys) :initial-element 0.4))
 	(uy (make-list (length limb-keys) :initial-element 0.4))
 	(uz (make-list (length limb-keys) :initial-element 0.4))
-	(lx (make-list (length limb-keys) :initial-element 0.2))
-	(ly (make-list (length limb-keys) :initial-element 0.2))
+	(lx (make-list (length limb-keys) :initial-element 0.06))
+	(ly (make-list (length limb-keys) :initial-element 0.06))
 	(gain
 	 (mapcar
 	  (function
@@ -458,7 +458,7 @@
 #|
 
 (test-sphere-human-ball-loop :key-list '(:rleg :lleg :rarm :larm) :debug-view nil :gain1 0.530954 :gain2 1.814612e+05 :rest-torque-ik-args (list :contact-wrench-optimize? nil))
-(test-sphere-human-ball-loop :key-list '(:rleg :lleg :rarm :larm) :debug-view nil :gain1 0.530954 :gain2 1.814612e+05 :rest-torque-ik-args (list :contact-wrench-optimize? t))
+(test-sphere-human-ball-loop :key-list '(:rleg :lleg :rarm :larm) :debug-view nil :gain1 3.530954 :gain2 1.814612e+05 :rest-torque-ik-args (list :contact-wrench-optimize? t))
 
 (dotimes (i 1000) (random 1.0))
 (setq
