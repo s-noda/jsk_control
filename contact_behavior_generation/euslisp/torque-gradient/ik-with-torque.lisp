@@ -214,11 +214,16 @@
 	 Jtau move g)
     ;; (print tau)
     (if torque-normalize?
-	(setq tau
-	      (map float-vector #'/ tau
-		   (send-all
-		    (send-all (remove root-link ul) :joint)
-		    :max-joint-torque))))
+	(let* ((id 0))
+	  (dolist (j (send-all (remove root-link ul) :joint))
+	    (setf (aref tau id)
+		  (/ (aref tau id) (send j :max-joint-torque)))
+	    (incf id))))
+    ;; (setq tau
+    ;;       (map float-vector #'/ tau
+    ;; 	   (send-all
+    ;; 	    (send-all (remove root-link ul) :joint)
+    ;; 	    :max-joint-torque))))
     (cond
      (*now-rsd*
       (send *now-rsd* :buf :tau tau)
@@ -379,8 +384,8 @@
    (target-coords (send-all move-target :copy-worldcoords))
    (translation-axis (mapcar #'(lambda (k) t) key-list))
    (rotation-axis translation-axis)
-   (thre (mapcar #'(lambda (k) 50) key-list))
-   (rthre (mapcar #'(lambda (k) (deg2rad 12)) key-list))
+   (thre (mapcar #'(lambda (k) 5) key-list))
+   (rthre (mapcar #'(lambda (k) (deg2rad 3)) key-list))
    (root-link-virtual-joint-weight #F(0.1 0.1 0.1 0.1 0.1 0.1))
    (avoid-weight-gain 0.01)
    target-centroid-pos
