@@ -40,6 +40,8 @@ te min-angle(~A)~%" self v min-angle))
 	(progn
 	  (send robot :put :root-link link)
 	  link)))
+   ;; (root-link-org
+   ;; (send robot :put :root-link-org (car (send robot :links))))
    (parent (send link :parent))
    (j (send link :joint))
    (jname (send-all (send robot :joint-list) :name))
@@ -63,6 +65,7 @@ te min-angle(~A)~%" self v min-angle))
     ;; 	       (find-if #'(lambda (j) (and j (string-equal name (send j :name))))
     ;; 			(send-all (send robot :links) :joint)))
     ;; 	   jname))
+    (send robot :put :root-link-org (car (send robot :links)))
     (send robot :set-val 'links
 	  (cons root-link (remove root-link (send robot :links))))
     ;;
@@ -144,6 +147,64 @@ te min-angle(~A)~%" self v min-angle))
 	#'(lambda (&rest args)
 	    (send *robot* :centroid))
 	:debug-view :no-message))
+
+(cond
+ ((and (boundp '*robot*) *robot*)
+  (defvar *rotational-6dof-fix-leg* :lleg)
+  (reverse-assoc :robot *robot* :limb *rotational-6dof-fix-leg*)
+  ;;
+  (eval
+   (list 'defmethod (send (class *robot*) :name)
+	 '(:link-list
+	   (to &optional from)
+	   (cond
+	    ((find to (send self *rotational-6dof-fix-leg* :links))
+	     ;; (format t "~A detected in ~A~%" (send to :name) *rotational-6dof-fix-leg*)
+	     (let* ((ret) (l to)
+		    (root-links
+		     (list from (send self :get :root-link-org))))
+	       (while (and (not (find l root-links)) (send l :child-links))
+		 (push l ret)
+		 (setq l (car (flatten (send l :child-links))))
+		 )
+	       ;; (setq ret (reverse ret))
+	       (if from (push from ret))
+	       ret))
+	    (t (send-super :link-list to from))))
+	 '(:fullbody-inverse-kinematics
+	   (target-coords
+	    &rest args
+	    &key
+	    (move-target) (link-list)
+	    (target-centroid-pos (apply #'midpoint 0.5 (send self :legs :end-coords :worldpos)))
+	    (cog-gain 2.0)
+	    (centroid-thre 5.0)
+	    &allow-other-keys)
+	   (let* ((p (position-if
+		      #'(lambda (mt)
+			  (eq (send mt :parent) (send *robot* *rotational-6dof-fix-leg* :end-coords :parent)))
+		      move-target)))
+	     (cond
+	      (p
+	       (setq target-coords (append (subseq target-coords 0 p)
+					   (if (< (+ 1 p) (length target-coords))
+					       (subseq target-coords (+ 1 p)))))
+	       (setq move-target (append (subseq move-target 0 p)
+					 (if (< (+ 1 p) (length move-target))
+					     (subseq move-target (+ 1 p)))))
+	       (setq link-list (append (subseq link-list 0 p)
+				       (if (< (+ 1 p) (length link-list))
+					   (subseq link-list (+ 1 p))))))))
+	   (send* self :inverse-kinematics target-coords
+		  :move-target move-target
+		  :link-list link-list
+		  :cog-gain cog-gain :centroid-thre centroid-thre
+		  :target-centroid-pos target-centroid-pos
+		  args)
+	   ))
+   )
+  ;;
+  ))
 
 
 #|
