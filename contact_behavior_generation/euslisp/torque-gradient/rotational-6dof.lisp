@@ -148,6 +148,56 @@ te min-angle(~A)~%" self v min-angle))
 	    (send *robot* :centroid))
 	:debug-view :no-message))
 
+(defun calc-jacobian-rotational
+  (fik row column joint paxis child-link world-default-coords
+       child-reverse
+       move-target transform-coords rotation-axis translation-axis
+       tmp-v0 tmp-v1 tmp-v2 tmp-v3 tmp-v3a tmp-v3b tmp-m33)
+  (let* ((j-rot (calc-jacobian-default-rotate-vector
+                 paxis world-default-coords child-reverse
+		 transform-coords tmp-v3 tmp-m33))
+         (p-diff (scale 1e-3
+                        (transform (transpose (send transform-coords :worldrot) tmp-m33)
+                                   (v- (send move-target :worldpos)
+				       (send world-default-coords :worldpos)
+				       tmp-v3a)
+                                   tmp-v3a) tmp-v3a))
+         (j-trs (v* j-rot p-diff tmp-v3b)))
+    (setq j-trs (calc-dif-with-axis j-trs translation-axis tmp-v0 tmp-v1 tmp-v2))
+    (dotimes (j (length j-trs)) (setf (aref fik (+ j row) column) (elt j-trs j)))
+    (setq j-rot (calc-dif-with-axis j-rot rotation-axis tmp-v0 tmp-v1 tmp-v2))
+    (dotimes (j (length j-rot)) (setf (aref fik (+ j row (length j-trs)) column) (elt j-rot j)))
+    ))
+
+(defun calc-inertia-matrix-rotational
+  (mat row column
+       paxis m-til c-til I-til axis-for-angular child-link world-default-coords
+       translation-axis rotation-axis
+       tmp-v0 tmp-v1 tmp-v2 tmp-va tmp-vb tmp-vc tmp-vd tmp-m)
+  (let* ((ax (normalize-vector (send world-default-coords :rotate-vector paxis tmp-va) tmp-va))
+         (mt (* 1e-3 m-til))
+         (ct (scale 1e-3 c-til tmp-vb))
+         (It (scale-matrix 1e-9 I-til tmp-m))
+         (mj (scale mt
+                    (v* ax (v- ct (scale 1e-3 (send world-default-coords :worldpos) tmp-vc) tmp-vc)
+                        tmp-vd) tmp-vc))
+         (hj (v- (v+ (v* ct mj tmp-vd) (transform It ax tmp-vb) tmp-vb)
+                 (v* (scale 1e-3 axis-for-angular tmp-va) mj tmp-vd) tmp-vb)))
+    (let ((mv (calc-dif-with-axis mj translation-axis tmp-v0 tmp-v1 tmp-v2)))
+      (dotimes (i (length mv)) (setf (aref mat (+ row i) column) (elt mv i)))
+      (let ((hv (calc-dif-with-axis hj rotation-axis tmp-v0 tmp-v1 tmp-v2)))
+        (dotimes (i (length hv)) (setf (aref mat (+ row i (length mv)) column) (elt hv i)))
+        ))))
+
+(defmethod rotational-joint
+  (:calc-spacial-velocity-jacobian
+   (ax tmp-va tmp-vb)
+   (v* (scale 0.001
+	      (send (send self :joint-worldcoords) :worldpos)
+	      tmp-va) ax tmp-vb))
+  )
+
+
 (cond
  ((and (boundp '*robot*) *robot*)
   (defvar *rotational-6dof-fix-leg* :lleg)
@@ -158,18 +208,18 @@ te min-angle(~A)~%" self v min-angle))
 	 '(:link-list
 	   (to &optional from)
 	   (cond
-	    ((find to (send self *rotational-6dof-fix-leg* :links))
-	     ;; (format t "~A detected in ~A~%" (send to :name) *rotational-6dof-fix-leg*)
-	     (let* ((ret) (l to)
-		    (root-links
-		     (list from (send self :get :root-link-org))))
-	       (while (and (not (find l root-links)) (send l :child-links))
-		 (push l ret)
-		 (setq l (car (flatten (send l :child-links))))
-		 )
-	       ;; (setq ret (reverse ret))
-	       (if from (push from ret))
-	       ret))
+	    ;; ((find to (send self *rotational-6dof-fix-leg* :links))
+	    ;;  ;; (format t "~A detected in ~A~%" (send to :name) *rotational-6dof-fix-leg*)
+	    ;;  (let* ((ret) (l (car (flatten (send to :child-links))))
+	    ;; 	    (root-links
+	    ;; 	     (list from (send self *rotational-6dof-fix-leg* :end-coords :parent) (send self :get :root-link-org))))
+	    ;;    (while (and (not (find l root-links)) (send l :child-links))
+	    ;; 	 (push l ret)
+	    ;; 	 (setq l (car (flatten (send l :child-links))))
+	    ;; 	 )
+	    ;;    ;; (setq ret (reverse ret))
+	    ;;    (if (and l (send l :joint)) (push l ret))
+	    ;;    ret))
 	    (t (send-super :link-list to from))))
 	 '(:fullbody-inverse-kinematics
 	   (target-coords
@@ -179,6 +229,7 @@ te min-angle(~A)~%" self v min-angle))
 	    (target-centroid-pos (apply #'midpoint 0.5 (send self :legs :end-coords :worldpos)))
 	    (cog-gain 2.0)
 	    (centroid-thre 5.0)
+	    additional-weight-list
 	    &allow-other-keys)
 	   (let* ((p (position-if
 		      #'(lambda (mt)
@@ -200,6 +251,14 @@ te min-angle(~A)~%" self v min-angle))
 		  :link-list link-list
 		  :cog-gain cog-gain :centroid-thre centroid-thre
 		  :target-centroid-pos target-centroid-pos
+		  :additional-weight-list
+		  (append
+		   additional-weight-list
+		   (remove nil
+			   (list (if (send self :rleg :toe-p)
+				     (list (send self :rleg :toe-p :child-link) 0))
+				 (if (send self :lleg :toe-p)
+				     (list (send self :lleg :toe-p :child-link) 0)))))
 		  args)
 	   ))
    )
@@ -207,87 +266,16 @@ te min-angle(~A)~%" self v min-angle))
   ))
 
 
-#|
 
-;; (defvar *robot-type* :hrp2jsknt-collada)
-;; (require "gradient-util.lisp")
-;; (require "../optimize-brli.lisp")
-
-(require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsknt-interface.l")
-(defvar *robot* (instance hrp2jsknt-robot :init))
-(defvar *robot-org* *robot*)
-(setq *robot* (copy-object *robot-org*))
-(objects (list *robot*))
-(reverse-assoc :robot *robot* :limb :lleg)
 
 #|
 
-(reverse-assoc :robot *robot* :limb :lleg)
+(send *robot* :legs :toe-p :min-angle 0)
+(send *robot* :legs :toe-p :max-angle 0)
 
-(send *robot* :reset-pose)
-
-(send *robot* :inverse-kinematics
-      (list
-       (send
-	(send *robot* :rarm :end-coords :copy-worldcoords)
-	:translate (float-vector 0 -100 0) :world)
-       (send *robot* :rleg :end-coords :copy-worldcoords))
-      :move-target
-      (list (send *robot* :rarm :end-coords)
-	    (send *robot* :rleg :end-coords))
-      :link-list
-      (list (send *robot* :link-list (send *robot* :rarm :end-coords :parent))
-	    (send *robot* :link-list (send *robot* :rleg :end-coords :parent)))
-      ;;
-      :target-centroid-pos
-      (scale 0.5 (v+ (send *robot* :rleg :end-coords :worldpos)
-		     (send *robot* :lleg :end-coords :worldpos)))
-      :centroid-thre 5
-      :cog-null-space t
-      :cog-gain 2.0
-      :cog-translation-axis :z
-      :centroid-offset-func
-      #'(lambda (&rest args)
-	  (send *robot* :centroid))
-      :debug-view :no-message)
-
-(send *robot* :fullbody-inverse-kinematics
-      (list
-       (send
-	(send *robot* :rarm :end-coords :copy-worldcoords)
-	:translate (float-vector 0 -100 0) :world)
-       (send *robot* :rleg :end-coords :copy-worldcoords)
-       (send *robot* :lleg :end-coords :copy-worldcoords))
-      :move-target
-      (list (send *robot* :rarm :end-coords)
-	    (send *robot* :rleg :end-coords)
-	    (send *robot* :lleg :end-coords))
-      :link-list
-      (list (send *robot* :link-list (send *robot* :rarm :end-coords :parent))
-	    (send *robot* :link-list (send *robot* :rleg :end-coords :parent))
-	    (send *robot* :link-list (send *robot* :lleg :end-coords :parent)))
-      ;;
-      :target-centroid-pos
-      (scale 0.5 (v+ (send *robot* :rleg :end-coords :worldpos)
-		     (send *robot* :lleg :end-coords :worldpos)))
-      :centroid-thre 5
-      :cog-null-space t
-      :cog-gain 1.0
-      :cog-translation-axis :z
-      :centroid-offset-func
-      #'(lambda (&rest args)
-	  (send *robot* :centroid))
-      :debug-view :no-message)
-
-(defun pendulum
-  (&optional (k :knee-p))
-  (do-until-key
-   (dotimes (i 10)
-     (send *robot* :lleg k :joint-angle 3 :relative t)
-     (send *viewer* :draw-objects))
-   (dotimes (i 10)
-     (send *robot* :lleg k :joint-angle -3 :relative t)
-     (send *viewer* :draw-objects))))
-
-(send-all (send *robot* :joint-list) :joint-angle 0)
-(pendulum :crotch-p)
+roseus human-ball-test.lisp
+(test-torque-ik)
+(load "rotational-6dof.lisp")
+(send-all (send *robot* :joint-list) :put :local-axis-vector nil)
+(send-all (send *robot* :joint-list) :local-axis-vector)
+(test-torque-ik :gain 1e-4 :key-list '(:rleg))
