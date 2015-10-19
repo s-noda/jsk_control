@@ -183,7 +183,8 @@
 		  :coords
 		  (copy-object (send c :worldcoords))
 		  :parent-link
-		  (send (send c :parent) :parent))))))
+		  (send c :parent) ;;(send (send c :parent) :parent)
+		  )))))
 	  limb-keys))
 	(contact-n
 	 (mapcar
