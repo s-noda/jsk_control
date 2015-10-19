@@ -302,6 +302,8 @@
        (concatenate
 	float-vector #F(0 0 0 0 0 0) move))
       ))
+    (if (and (boundp '*rotational-6dof-fix-leg*) *rotational-6dof-fix-leg*)
+	(setq move (subseq move 6)))
     (cond
      (debug?
       (format t "[/joint-angle]~%")
@@ -424,11 +426,13 @@
 	    #'(lambda nil
 		(x::window-main-one)
 		(incf cnt)
-		(apply #'simple-calc-torque-gradient
-		       (append
-			(list :cnt cnt
-			      :target-centroid-pos target-centroid-pos)
-			args)))
+		(let* ((move (apply #'simple-calc-torque-gradient
+				    (append
+				     (list :cnt cnt
+					   :target-centroid-pos target-centroid-pos)
+				     args))))
+		  move)
+		)
 	    :target-centroid-pos (print target-centroid-pos)
 	    :min min :max max
 	    :avoid-weight-gain avoid-weight-gain
