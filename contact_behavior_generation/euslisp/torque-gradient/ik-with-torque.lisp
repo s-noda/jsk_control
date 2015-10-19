@@ -126,6 +126,7 @@
      (if contact-wrench-optimize? nil (list :ret-buf nil)))
     ))
   (setq *now-rsd* ret)
+  ;; (send *now-rsd* :draw) (read-line)
   (if contact-wrench-optimize?
       (if (not (send *now-rsd* :full-constrainted))
 	  (progn (setq *ik-convergence-user-check* 0.0)
@@ -381,7 +382,9 @@
 		 (t (send *robot* k :end-coords))))
 	    key-list))
    (link-list
-    (mapcar #'(lambda (mt) (send *robot* :link-list (send mt :parent)))
+    (mapcar #'(lambda (mt)
+		(remove-if '(lambda (l) (find (send l :joint) (send *robot* :legs :toe-p)))
+			   (send *robot* :link-list (send mt :parent))))
 	    move-target))
    (target-coords (send-all move-target :copy-worldcoords))
    (translation-axis (mapcar #'(lambda (k) t) key-list))
