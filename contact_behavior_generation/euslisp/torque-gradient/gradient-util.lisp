@@ -909,24 +909,29 @@
    (6dof? t)
    (meter? t)
    (debug? t)
+   ;;
+   ret
    )
-  (reduce
-   #'m+
-   (cons
-    cog-gradientx2
-    (mapcar
-     #'(lambda (w mt)
-	 (apply #'calc-torque-gradient-from-wrench-and-gradient
-		(append
-		 (list :robot robot
-		       :wrench w
-		       :move-target mt
-		       ;;:link-list link-list
-		       :all-joint-list all-joint-list
-		       :debug? debug?
-		       )
-		 args)))
-     wrench move-target))))
+  (setq
+   ret
+   (reduce
+    #'m+
+    (cons
+     cog-gradientx2
+     (mapcar
+      #'(lambda (w mt)
+	  (apply #'calc-torque-gradient-from-wrench-and-gradient
+		 (append
+		  (list :robot robot
+			:wrench w
+			:move-target mt
+			;;:link-list link-list
+			:all-joint-list all-joint-list
+			:debug? debug?
+			)
+		  args)))
+      wrench move-target))))
+  ret)
 
 (defun child-reverse-filter
   (target joint-list &key (6dof? t))
@@ -1032,6 +1037,19 @@
        (v+ vbuf vbufbuf vbuf)
        )
    wrench-list move-target-list)
+  ;;
+  (cond
+   (debug?
+    (let* ((tau (send robot :torque-vector
+		      :target-coords move-target-list
+		      :force-list (mapcar '(lambda (v) (subseq v 0 3)) wrench-list)
+		      :moment-list (mapcar '(lambda (v) (subseq v 3 6)) wrench-list)))
+	   (tau2 (coerce (send-all all-joint-list :joint-torque) float-vector)))
+      (format t "tau-check: ~A vs ~A = ~A (~A)~%"
+	      vbuf tau2 (v- vbuf tau2) (norm2 (v- vbuf tau2)))
+      (if (> (norm2 (v- vbuf tau2)) 1e-1)
+	  (format t " --- too large error~%"))
+      )))
   vbuf
   )
 
