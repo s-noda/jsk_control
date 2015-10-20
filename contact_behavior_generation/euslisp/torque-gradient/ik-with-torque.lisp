@@ -187,6 +187,8 @@
    (xtol 0.001)
    (ftol 0.001)
    (gtol 0.001)
+   ;;
+   (update-joint-angle? nil)
    &allow-other-keys)
   (if (> cnt (* 0.9 stop))
       (setq *ik-convergence-user-check* 0.0))
@@ -352,6 +354,8 @@
 	    (abs g)
 	    dt/dx
 	    (send gtm :stop) (send tm :stop))
+    (if update-joint-angle?
+	(map cons '(lambda (j mv) (send j :joint-angle mv :relative t)) (send-all (remove root-link ul) :joint) move))
     ;; throw exception
     move))
 
@@ -427,15 +431,27 @@
 	    collision-avoidance-link-pair
 	    :null-space
 	    #'(lambda nil
-		(x::window-main-one)
-		(incf cnt)
-		(let* ((move (apply #'simple-calc-torque-gradient
-				    (append
-				     (list :cnt cnt
-					   :target-centroid-pos target-centroid-pos)
-				     args))))
-		  move)
-		)
+	    	(x::window-main-one)
+	    	(incf cnt)
+	    	(let* ((move (apply #'simple-calc-torque-gradient
+	    			    (append
+	    			     (list :cnt cnt
+	    				   :target-centroid-pos target-centroid-pos)
+	    			     args))))
+	    	  move)
+	    	)
+	    ;; :move-joints-hook
+	    ;; #'(lambda nil
+	    ;; 	(x::window-main-one)
+	    ;; 	(incf cnt)
+	    ;; 	(let* ((move (apply #'simple-calc-torque-gradient
+	    ;; 			    (append
+	    ;; 			     (list :cnt cnt
+	    ;; 				   :target-centroid-pos target-centroid-pos
+	    ;; 				   :update-joint-angle? t)
+	    ;; 			     args))))
+	    ;; 	  move)
+	    ;; 	)
 	    :target-centroid-pos (print target-centroid-pos)
 	    :min min :max max
 	    :avoid-weight-gain avoid-weight-gain
@@ -453,7 +469,9 @@
   (cond
    (*now-rsd*
     (send *now-rsd* :buf :time (send tm :stop))
-    (send *best-rsd* :buf :time (send *now-rsd* :buf :time))
+    (if (not *best-rsd*)
+	(setq *best-rsd* *now-rsd*)
+      (send *best-rsd* :buf :time (send *now-rsd* :buf :time)))
     (format t "    time: ~A~%" (send *now-rsd* :buf :time))
     (or *best-rsd* (if ret *now-rsd*))))
   )
