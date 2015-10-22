@@ -174,7 +174,7 @@
    (ul (send *robot* :calc-union-link-list link-list))
    (6dof? nil)
    (torque-gradient-root-link-virtual-joint-weight
-    #F(0.001 0.001 0.001 0.001 0.001 0.001))
+    (fill (instantiate float-vector 6) 1e-2))
    (gain nil) ;;1e-3)
    (null-max 0.3)
    (cnt -1)
@@ -289,24 +289,23 @@
 	   move
 	   (send-all (remove root-link ul) :joint) :6dof? 6dof?))
     (cond
-     (6dof?
-      (setq move
-	    (concatenate
-	     float-vector
-	     (subseq move (- (length move) 6) (length move))
-	     (subseq move 6)))
-      (dotimes (i 6)
-	(setf (aref move i)
-	      (* (aref torque-gradient-root-link-virtual-joint-weight i)
-		 (aref move i)))))
-     (t
+     ((and (not 6dof?)
+	   (not (and (boundp '*rotational-6dof-fix-leg*) *rotational-6dof-fix-leg*)))
       (setq
        move
        (concatenate
-	float-vector #F(0 0 0 0 0 0) move))
-      ))
-    (if (and (boundp '*rotational-6dof-fix-leg*) *rotational-6dof-fix-leg*)
-	(setq move (subseq move 6)))
+	float-vector #F(0 0 0 0 0 0) move)))
+     (t
+      (if 6dof?
+	  (setq move
+		(concatenate
+		 float-vector
+		 (subseq move (- (length move) 6) (length move))
+		 (subseq move 0 (- (length move) 6)))))
+      (dotimes (i 6)
+	(setf (aref move i)
+	      (* (aref torque-gradient-root-link-virtual-joint-weight i)
+		 (aref move i))))))
     (cond
      (debug?
       (format t "[/joint-angle]~%")
@@ -406,12 +405,16 @@
    collision-avoidance-link-pair
    (min #F(-1000 -1000 -1000 -500 -500 -500))
    (max #F(1000 1000 1000 500 500 500))
-   robot
+   (robot *robot*)
    ret
+   (null-space t)
    &allow-other-keys)
   (setq args
 	(append
-	 (list :robot (setq robot (copy-object *robot*))
+	 (list :robot
+	       (if (and (boundp '*rotational-6dof-fix-leg*) *rotational-6dof-fix-leg*)
+		   robot
+		 (setq robot (copy-object *robot*)))
 	       :move-target move-target
 	       :link-list link-list
 	       )
@@ -430,29 +433,31 @@
 	    :collision-avoidance-link-pair
 	    collision-avoidance-link-pair
 	    :null-space
-	    #'(lambda nil
-	    	(x::window-main-one)
-	    	(incf cnt)
-	    	(let* ((move (apply #'simple-calc-torque-gradient
-	    			    (append
-	    			     (list :cnt cnt
-	    				   :target-centroid-pos target-centroid-pos)
-	    			     args))))
-	    	  move)
-	    	)
-	    ;; :move-joints-hook
-	    ;; #'(lambda nil
-	    ;; 	(x::window-main-one)
-	    ;; 	(incf cnt)
-	    ;; 	(let* ((move (apply #'simple-calc-torque-gradient
-	    ;; 			    (append
-	    ;; 			     (list :cnt cnt
-	    ;; 				   :target-centroid-pos target-centroid-pos
-	    ;; 				   :update-joint-angle? t)
-	    ;; 			     args))))
-	    ;; 	  move)
-	    ;; 	)
-	    :target-centroid-pos (print target-centroid-pos)
+	    (if null-space
+		#'(lambda nil
+		    (x::window-main-one)
+		    (incf cnt)
+		    (let* ((move (apply #'simple-calc-torque-gradient
+					(append
+					 (list :cnt cnt
+					       :target-centroid-pos target-centroid-pos)
+					 args))))
+		      move)
+		    ))
+	    :move-joints-hook
+	    (if (not null-space)
+		#'(lambda nil
+		    (x::window-main-one)
+		    (incf cnt)
+		    (let* ((move (apply #'simple-calc-torque-gradient
+					(append
+					 (list :cnt cnt
+					       :target-centroid-pos target-centroid-pos
+					       :update-joint-angle? t)
+					 args))))
+		      move)
+		    ))
+	    :target-centroid-pos target-centroid-pos
 	    :min min :max max
 	    :avoid-weight-gain avoid-weight-gain
 	    :translation-axis (funcall filter translation-axis)
