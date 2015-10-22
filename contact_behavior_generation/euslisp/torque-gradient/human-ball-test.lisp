@@ -285,6 +285,7 @@
    (callback nil)
    (gain1) (gain2)
    (rest-torque-ik-args)
+   (stop 100)
    human-ball-pose-args
    torque-ik-args
    )
@@ -296,7 +297,7 @@
 		:init nil
 		:null-max 0.3
 		:gtol 0.001
-		:stop 100
+		:stop stop
 		:linear-brli nil
 		:debug-view debug-view
 		;;:root-link-virtual-joint-weight
