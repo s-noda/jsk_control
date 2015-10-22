@@ -7,76 +7,6 @@
 	  (send (send j :get :ref-joint) :joint-angle)))
   )
 
-;; (defun add-6dof-rotational-joints
-;;   (&key
-;;    (robot *robot*)
-;;    (root-link (car (send robot :links)))
-;;    (ref-joint (subseq (send robot :lleg :joint-list) 0 6))
-;;    ;;
-;;    (link-list (list nil))
-;;    (rlink root-link)
-;;    rlinks
-;;    ;;
-;;    (org-coords
-;;     (send (send (car (last ref-joint)) :child-link)
-;; 	  :copy-worldcoords))
-;;    )
-;;   (dotimes (i (length ref-joint))
-;;     (let* ((j0 (nth i ref-joint))
-;; 	   (vlink
-;; 	    (instance
-;; 	     bodyset-link
-;; 	     :init (make-cascoords)
-;; 	     :bodies (list (make-cube 50 50 50))
-;; 	     :name (format nil "~A~A" 'virtual-link_ i)
-;; 	     :weight 0 :centroid (float-vector 0 0 0)
-;; 	     :inertia-tensor (make-matrix 3 3)))
-;; 	   (j (instance rotational-joint :init
-;; 			:name (format nil "~A_virtual"
-;; 				      (send j0 :name))
-;; 			:axis (scale 1 (send j0 :get-val 'axis))
-;; 			:min (send j0 :min-angle)
-;; 			:max (send j0 :max-angle)
-;; 			:child-link rlink
-;; 			;;(if (eq rlink root-link) robot rlink)
-;; 			:parent-link vlink))
-;; 	   )
-;;       ;; (send vlink :transform (send (send j0 :child-link) :copy-worldcoords))
-;;       ;; (if (not (eq rlink root-link))
-;;       (send vlink :assoc rlink)
-;;       (send j :put :ref-joint j0)
-;;       ;; (send vlink :transform (send j :get-val 'default-coords)) = (send (send rlink :transform (send j0 :get-val 'default-coords)) :transformation (make-coords))
-;;       (send j :set-val 'default-coords
-;; 	    (send (send j0 :get-val 'default-coords)
-;; 		  :transformation (make-coords)))
-;;       (send j :joint-angle (send j0 :joint-angle))
-;;       (send rlink :add-joint j)
-;;       (send rlink :add-parent-link vlink)
-;;       (send vlink :add-child-links rlink)
-;;       (push rlink rlinks)
-;;       (setq rlink vlink)))
-;;   (send robot :put :root-link-org root-link)
-;;   (send robot :put :links-org (send robot :links))
-;;   (send rlink :newcoords org-coords)
-;;   (send robot :set-val 'links
-;; 	(append (cons rlink rlinks)
-;; 		(remove root-link (send robot :links))))
-;;   (send-all (send robot :joint-list) :joint-angle 0 :relative t)
-;;   (send-all (send robot :links) :worldcoords)
-;;   (setq root-link (send root-link :parent-link))
-;;   ;; (send robot :set-val 'joint-list (flatten (send-all (send robot :links) :joint)))
-;;   (list
-;;    (cons :6dof-links
-;;          (mapcar #'(lambda (l) (append rlinks l)) link-list))
-;;    (cons :del-6dof-links
-;;          (eval
-;;           (list 'function
-;;                 (list 'lambda nil
-;; 		      (list 'send (send root-link :parent-link) :del-child-link root-link)
-;;                       (list 'send root-link :del-joint)
-;;                       (list 'send root-link :del-parent-link))))))
-;;   )
-
 (defun add-6dof-rotational-joints
   (&key
    (robot *robot*)
@@ -99,9 +29,14 @@
 	  :copy-worldcoords))
    (org-av (copy-seq (send robot :angle-vector)))
    (jc0)
+   (pos-mask (float-vector 1 0 1))
    )
   (send rlink :newcoords
-	(send org-coords :copy-worldcoords))
+	(make-coords
+	 :pos (map float-vector '* pos-mask
+		   (send org-coords :worldpos))
+	 :rot (copy-object
+	       (send org-coords :worldrot))))
   (send robot :init-pose)
   (send-all (send robot :links) :worldcoords)
   (dolist (j0 (reverse ref-joint))
@@ -142,6 +77,11 @@
 		(send
 		 (send j0 :get-val 'default-coords)
 		 :transformation (make-coords))))
+      (let* ((v (send (send j :get-val 'default-coords)
+		      :worldpos)))
+	(dotimes (i 3)
+	  (setf (aref v i)
+		(* (aref v i) (aref pos-mask i)))))
       ;; (send (send j0 :get-val 'default-coords)
       ;; :transformation (make-coords)))
       (send j :joint-angle (send j0 :joint-angle))
@@ -321,7 +261,7 @@ roseus human-ball-test.lisp
 (send-all (send *robot* :joint-list) :put :local-axis-vector nil)
 (send-all (send *robot* :joint-list) :local-axis-vector)
 (reset-pose)
-(test-torque-ik :init nil :gain nil :null-max 3)
+(test-torque-ik :init nil :gain nil :null-max 2.0)
 
 (test-torque-ik :init nil)
 (test-torque-ik :stop 50 :gain 100 :init nil)
