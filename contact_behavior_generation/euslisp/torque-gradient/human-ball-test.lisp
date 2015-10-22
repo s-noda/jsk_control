@@ -94,20 +94,26 @@
 
 (defun human-ball-pose
   (&key
-   (key-list '(:rleg :lleg :rarm :larm)))
-  (send *robot* :reset-manip-pose)
-  ;; (send *robot* :newcoords
-  ;; (make-coords :pos #F(0 0 -100)))
-  ;; (send (car (send *robot* :links))
-  ;; :newcoords (make-coords :pos #F(0 0 -100)))
-  (send (car (send *robot* :links))
-	:transform
-	(send (send (send *robot* :link "BODY")
-		    :copy-worldcoords)
-	      :transformation
-	      (make-coords
-	       :pos (float-vector 0 0 -100))))
+   (key-list '(:rleg :lleg :rarm :larm))
+   (human-ball-init-pose
+    '(progn
+       (send *robot* :reset-manip-pose)
+       ;; (send *robot* :newcoords
+       ;; (make-coords :pos #F(0 0 -100)))
+       ;; (send (car (send *robot* :links))
+       ;; :newcoords (make-coords :pos #F(0 0 -100)))
+       (send (car (send *robot* :links))
+	     :transform
+	     (send (send (send *robot* :link "BODY")
+			 :copy-worldcoords)
+		   :transformation
+		   (make-coords
+		    :pos (float-vector 0 0 -100))))
+       )))
   ;;
+  (if (and (listp human-ball-init-pose)
+	   human-ball-init-pose)
+      (eval human-ball-init-pose))
   (send-all (send *robot* :links) :worldcoords)
   (objects (flatten (list *robot-hand* *human-ball*)))
   (send *irtviewer* :change-background (float-vector 1 1 1))
@@ -279,6 +285,7 @@
    (callback nil)
    (gain1) (gain2)
    (rest-torque-ik-args)
+   human-ball-pose-args
    torque-ik-args
    )
   (let* ((inital-av) init-rsd torque brlv)
@@ -297,7 +304,7 @@
 		:rotation-axis rotation-axis))
     (while (or (null
 		(setq inital-av
-		      (print (human-ball-pose :key-list key-list))))
+		      (print (apply #'human-ball-pose :key-list key-list human-ball-pose-args))))
 	       (progn
 		 (apply 'simple-calc-torque-gradient
 			(append rest-torque-ik-args torque-ik-args))
