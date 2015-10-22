@@ -96,9 +96,18 @@
   (&key
    (key-list '(:rleg :lleg :rarm :larm)))
   (send *robot* :reset-manip-pose)
-  (send *robot* :newcoords (make-coords :pos #F(0 0 -100)))
+  ;; (send *robot* :newcoords
+  ;; (make-coords :pos #F(0 0 -100)))
+  ;; (send (car (send *robot* :links))
+  ;; :newcoords (make-coords :pos #F(0 0 -100)))
   (send (car (send *robot* :links))
-	:newcoords (make-coords :pos #F(0 0 -100)))
+	:transform
+	(send (send (send *robot* :link "BODY")
+		    :copy-worldcoords)
+	      :transformation
+	      (make-coords
+	       :pos (float-vector 0 0 -100))))
+  ;;
   (send-all (send *robot* :links) :worldcoords)
   (objects (flatten (list *robot-hand* *human-ball*)))
   (send *irtviewer* :change-background (float-vector 1 1 1))

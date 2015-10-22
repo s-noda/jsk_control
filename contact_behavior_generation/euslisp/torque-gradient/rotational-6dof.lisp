@@ -31,6 +31,10 @@
    (jc0)
    (pos-mask (float-vector 1 0 1))
    )
+  (send robot :put :transformation-from-root-link
+	(send (send root-link :copy-worldcoords)
+	      :transformation
+	      (send robot :copy-worldcoords)))
   (send rlink :newcoords
 	(make-coords
 	 :pos (map float-vector '* pos-mask
@@ -112,6 +116,23 @@
                       (list 'send root-link :del-joint)
                       (list 'send root-link :del-parent-link))))))
   )
+
+(defun robot-newcoords
+  (c &key (robot *robot*) (debug? nil))
+  (let* ((rc (send (send (send robot :get :root-link-org) :copy-worldcoords) :transform (send robot :get :transformation-from-root-link)))
+	 (dc (send rc :transformation c)) df)
+    (send (car (send robot :links)) :newcoords
+	  (send (send (car (send robot :links))
+		      :copy-worldcoords) :transform dc))
+    (send-all (send robot :links) :worldcoords)
+    (cond
+     (debug?
+      (setq rc (send (send (send robot :get :root-link-org) :copy-worldcoords) :transform (send robot :get :transformation-from-root-link)))
+      (setq df (concatenate float-vector (send rc :difference-position c) (send rc :difference-rotation c)))
+      (format t "diff: ~A (~A)~%"
+	      df (norm df))
+      (if (> (norm df) 1e-3) (print 'too-large-error))))
+    ))
 
 (defun demo-rotational-6dof
   nil
@@ -219,6 +240,11 @@
   ;;
   (eval
    (list 'defmethod (send (class *robot*) :name)
+	 ;; '(:newcoords
+	 ;;   (c &optional p)
+	 ;;   (robot-newcoords
+	 ;;    (if p (make-coords :pos p :rot c) c)
+	 ;;    :robot self))
 	 '(:fullbody-inverse-kinematics
 	   (target-coords
 	    &rest args
@@ -262,14 +288,4 @@ roseus human-ball-test.lisp
 (send-all (send *robot* :joint-list) :local-axis-vector)
 (reset-pose)
 (test-torque-ik :init nil :gain nil :null-max 2.0)
-
-(test-torque-ik :init nil)
-(test-torque-ik :stop 50 :gain 100 :init nil)
-
-(test-torque-ik :key-list '(:rleg :lleg) :init nil :null-max (* (rad2deg 1) 0.1) :gain (* (rad2deg 1) 1e-4) :null-space nil)
-
-
-(require "package://euslisp/jskeus/irteus/irtmodel.l")
-(require "package://euslisp/jskeus/irteus/irtrobot.l")
-(require "package://euslisp/jskeus/irteus/irtdyna.l")
 

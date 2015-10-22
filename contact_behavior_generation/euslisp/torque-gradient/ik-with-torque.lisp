@@ -195,13 +195,20 @@
   ;;(throw :ik-stop :loop-exceeded))
   (let* ((tm (instance mtimer :init))
 	 (copy-rsd
-	  (progn
+	  (cond
+	   ((and (boundp '*rotational-6dof-fix-leg*) *rotational-6dof-fix-leg*)
+	    nil)
+	   (t
 	    (send robot :angle-vector
-		  (copy-seq (send *robot* :angle-vector)))
+		  (copy-seq
+		   (send *robot* :angle-vector)))
 	    (send robot :newcoords
-		  (copy-object (send *robot* :worldcoords)))
-	    (send-all (send *robot* :links) :worldcoords)
-	    (send-all (send robot :links) :worldcoords)))
+		  (copy-object
+		   (send *robot* :worldcoords)))
+	    (send-all (send *robot* :links)
+		      :worldcoords)
+	    (send-all (send robot :links)
+		      :worldcoords))))
 	 (wrench-list
 	  (if (functionp wrench-list)
 	      (apply wrench-list args)
