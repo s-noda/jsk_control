@@ -318,7 +318,8 @@
 	  (append torque-ik-args
 		  (list :now-rsd init-rsd
 			:best-rsd init-rsd)))
-    ;;(send init :draw :rest (list *human-ball*))
+    (send init-rsd :draw :rest (list *human-ball*) :friction-cone? nil)
+    (send *viewer* :draw-objects)
     (setq *rsd-queue* nil)
     (setq
      torque
@@ -333,7 +334,8 @@
     (send *viewer* :draw-objects)
     (send torque :buf :gain *simple-calc-torque-gradient-gain*)
     ;; (setq init (car (last *rsd-queue*)))
-    ;; (send init :draw :rest (list *human-ball*))
+    (send init-rsd :draw :rest (list *human-ball*) :friction-cone? nil)
+    (send *viewer* :draw-objects)
     (setq *rsd-queue* nil)
     (setq
      brlv
