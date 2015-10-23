@@ -285,7 +285,7 @@
    (callback nil)
    (gain1) (gain2)
    (rest-torque-ik-args)
-   (stop 100)
+   (stop 100) (null-max 0.3)
    human-ball-pose-args
    torque-ik-args
    )
@@ -295,7 +295,7 @@
 	  (list :key-list key-list
 		:wrench-key-list key-list
 		:init nil
-		:null-max 0.3
+		:null-max null-max
 		:gtol 0.001
 		:stop stop
 		:linear-brli nil
