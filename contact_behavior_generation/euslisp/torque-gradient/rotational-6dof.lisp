@@ -31,6 +31,7 @@
    (jc0)
    (pos-mask (float-vector 1 0 1))
    )
+  (send robot :dissoc (car (send robot :links)))
   (send robot :put :transformation-from-root-link
 	(send (send root-link :copy-worldcoords)
 	      :transformation
@@ -94,15 +95,23 @@
       (send rlink :add-child-links vlink)
       (push rlink rlinks)
       (setq rlink vlink) (setq jc0 jc)))
+  ;;
   (push rlink rlinks)
   (setq rlinks (reverse rlinks))
   (send robot :put :root-link-org root-link)
   (send robot :put :links-org (send robot :links))
-  (send robot :set-val 'links
-	(append rlinks (send robot :links)))
+  (send robot :put :joint-list-org (send robot :joint-list))
+  ;;
   (send robot :angle-vector org-av)
   (copy-virtual-joint-angle)
   (send-all (send robot :links) :worldcoords)
+  ;;
+  (send robot :set-val 'links
+	(append rlinks (send robot :links)))
+  (send robot :set-val 'joint-list
+	(flatten (send-all (send robot :links) :joint)))
+  (send robot :assoc (car (send robot :links)))
+  ;;
   (setq root-link (send root-link :parent-link))
   ;; (send robot :set-val 'joint-list (flatten (send-all (send robot :links) :joint)))
   (list
@@ -245,6 +254,19 @@
 	 ;;   (robot-newcoords
 	 ;;    (if p (make-coords :pos p :rot c) c)
 	 ;;    :robot self))
+	 '(:angle-vector
+	   (&rest args)
+	   (if (or (null args)
+		   (>= (length (car args)) (length joint-list)))
+	       (send-super* :angle-vector args)
+	     (send-super* :angle-vector
+			  (concatenate float-vector
+				       (send-all
+					(subseq joint-list 0 (- (length joint-list)
+								(length (car args))))
+					:joint-angle)
+				       (car args))
+			  (cdr args))))
 	 '(:fullbody-inverse-kinematics
 	   (target-coords
 	    &rest args
