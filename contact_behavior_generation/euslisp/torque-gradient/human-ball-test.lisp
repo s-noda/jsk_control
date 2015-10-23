@@ -102,13 +102,15 @@
        ;; (make-coords :pos #F(0 0 -100)))
        ;; (send (car (send *robot* :links))
        ;; :newcoords (make-coords :pos #F(0 0 -100)))
-       (send (car (send *robot* :links))
-	     :transform
-	     (send (send (send *robot* :link "BODY")
-			 :copy-worldcoords)
-		   :transformation
-		   (make-coords
-		    :pos (float-vector 0 0 -100))))
+       (send *robot*
+	     :newcoords
+	     (send (send *robot* :copy-worldcoords)
+		   :transform
+		   (send (send (send *robot* :link "BODY")
+			       :copy-worldcoords)
+			 :transformation
+			 (make-coords
+			  :pos (float-vector 0 0 -100)))))
        )))
   ;;
   (if (and (listp human-ball-init-pose)
