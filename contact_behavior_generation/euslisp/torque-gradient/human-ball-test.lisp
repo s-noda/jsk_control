@@ -1,7 +1,7 @@
 (defvar *robot-type* :hrp2jsknt-collada)
 
 (require "ik-with-torque.lisp")
-(require "package://eus_gui/graph-sample.lisp")
+(require (if (ros::rospack-find "eus_gui") "package://eus_gui/graph-sample.lisp" "../util/graph-sample.lisp"))
 
 (defvar *ball-radius* 900)
 (defvar *human-ball* (make-sphere (* 1 *ball-radius*)))
