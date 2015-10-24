@@ -84,6 +84,20 @@
     (format p "~%")
     ))
 
+(defun gen-t1-t2-f1-f2
+  (&optional
+   (tau (parse-from-key :f))
+   (tm (parse-from-key :time))
+   (t1-t2-f1-f2
+    (mapcar '(lambda (tml fl)
+	       (list (nth 1 tml) (nth 2 tml)
+		     (/ (nth 1 fl) (nth 0 fl))
+		     (/ (nth 2 fl) (nth 0 fl))
+		     (/ (nth 1 fl) (nth 2 fl))
+		     ))
+	    tm tau)))
+  t1-t2-f1-f2)
+
 (defun dump-t1-t2-f1-f2
   (&key (path "t1_t2_f1_f2.log"))
   (let* ((p (open path :direction :output))
@@ -126,6 +140,55 @@
     ;;
     (close p)
     ))
+
+(defun gen-hist-data
+  (&key
+   (t1-t2-f1-f2 (gen-t1-t2-f1-f2))
+   (f1-f2 (mapcar '(lambda (dl) (subseq dl 2 4)) t1-t2-f1-f2))
+   (range '(0.5 1.0))
+   (step 0.1)
+   (x (let* (buf (x (car range)))
+	(while (< x (cadr range))
+	  (push x buf) (setq x (+ x step)))
+	(if (not (eps= (car buf) (cadr range)))
+	    (push (cadr range) buf))
+	(coerce (reverse buf) float-vector)))
+   (y
+    (mapcar
+     #'(lambda (d) (scale 0 x))
+     (car f1-f2)))
+   ;;
+   val
+   )
+  (dolist (dl f1-f2)
+    (dotimes (i (length dl))
+      (setq val (floor (/ (- (nth i dl) (car range)) step)))
+      (if (< val (length (nth i y)))
+	  (setf (aref (nth i y) val) (+ (aref (nth i y) val) 1)))))
+  (list (cons :x x) (cons :y y)))
+
+(defun dump-hist-plot-data
+  (&key
+   (hist-data (gen-hist-data))
+   (path "plot_dat.py")
+   )
+  (labels
+      ((dump-array
+	(p v name)
+	(format p "~A=np.array([" name)
+	(dotimes (i (length v))
+	  (format p "~A~A"
+		  (if (> i 0) "," "")
+		  (aref v i)))
+	(format p "])~%")))
+    (let* ((p (open path :direction :output)))
+      (format p "import numpy as np~%")
+      (dump-array p (cdr (assoc :x hist-data)) "X")
+      (dump-array p (nth 0 (cdr (assoc :y hist-data))) "Y1")
+      (dump-array p (nth 1 (cdr (assoc :y hist-data))) "Y2")
+      (close p)))
+  (unix::system "./hist.py")
+  hist-data)
 
 (cond
  ((substringp "true" (unix::getenv "TORQUE_GRAD_TEST"))
