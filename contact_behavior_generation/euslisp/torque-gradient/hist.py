@@ -20,8 +20,8 @@ def gen_pos_buf(x, path):
             read_flag=False
         elif read_flag:
         ## print line
-            if float(line.split(" ")[1+x]) < 1.1:
-                time_buf.append( (100 * float(line.split(" ")[1+x]) ))
+            ## if float(line.split(" ")[1+x]) < 0.99:
+            time_buf.append( (100 * float(line.split(" ")[1+x]) ))
         line = f.readline()
     f.close()
     return time_buf
@@ -88,7 +88,7 @@ def gen_graph(ls, rng, gen_data, title="histgram", xlabel="dif [m]", labels=None
                 time_buf = gen_data(p)
             ## time_buf_fit = dis.norm.fit(time_buf)
             weights = np.ones_like(time_buf) ##/len(time_buf)
-            plt.hist(time_buf, weights=weights, bins=100, label=labels[i], range=rng, normed=True, alpha=1.0 , histtype="step", cumulative=True)
+            plt.hist(time_buf, weights=weights, bins=100, label=labels[i], range=rng, normed=True, alpha=1.0 , histtype="bar", cumulative=False)
             ## time_buf_buf.append(time_buf)
             ##
             loc=float(np.mean(time_buf))
@@ -123,9 +123,5 @@ plt.rcParams.update(params)
 
 ls=["t1_t2_f1_f2.log", "t1_t2_f1_f2.log"]
 lb=["Torque Gradient", "Qseudo Gradient"]
-gen_graph(ls, [40, 100], [functools.partial(gen_pos_buf, 1), functools.partial(gen_pos_buf, 2)], xlabel="$\|Torque\|$/$\|Torque_{0}\|$", title=".", labels=lb, logpath="torque_gradient_tau_rate.pdf", draw_np=False)
-
-# ls=["t1_t2_f1_f2.log"]
-# lb=["$\|\tau\|$/$\|\tau_{0}\|$"]
-# gen_graph(ls, [0, 100], functools.partial(gen_pos_buf, 1), xlabel='.', title=".", labels=lb, logpath="torque_gradient_tau_rate.pdf", draw_np=False)
-# gen_graph(ls, [0, 100], functools.partial(gen_pos_buf, 2), xlabel='.', title=".", labels=lb, logpath="pseudo_torque_gradient_tau_rate.pdf", draw_np=False)
+## gen_graph(ls, [40, 100], [functools.partial(gen_pos_buf, 1), functools.partial(gen_pos_buf, 2)], xlabel="$\|Torque\|$/$\|Torque_{0}\|$", title=".", labels=lb, logpath="torque_gradient_tau_rate.pdf", draw_np=False)
+gen_graph(["t1_t2_f1_f2.log"], [50, 150], [functools.partial(gen_pos_buf, 3)], xlabel=".", title=".", labels=["$\|Torque_{1}\|$/$\|Torque_{2}\|$"], logpath="torque_gradient_tau_rate2.pdf", draw_np=False)
