@@ -276,7 +276,9 @@
       target-coords))
 
 (defun test-sphere-human-ball
-  (&key
+  (&rest
+   args
+   &key
    (key-list '(:rleg :lleg :rarm :larm))
    (rotation-axis
     (subseq
@@ -290,6 +292,7 @@
    (stop 100) (null-max 0.3)
    human-ball-pose-args
    torque-ik-args
+   &allow-other-keys
    )
   (let* ((inital-av) init-rsd torque brlv)
     (setq *ik-convergence-user-check* 0.0)
