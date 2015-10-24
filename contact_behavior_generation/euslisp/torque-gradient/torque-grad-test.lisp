@@ -11,8 +11,11 @@
  ((substringp "true" (unix::getenv "TORQUE_GRAD_TEST"))
   (setq
    *test-human-ball-rsd*
-   (test-sphere-human-ball-loop :loop-max 50 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(t t t t) :stop 55 :null-max 0.5 :debug-view nil :gain1 0.05 :gain2 0.005 :rest-torque-ik-args (list :contact-wrench-optimize? t) :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose) (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -650)))))))
-  (dump-loadable-structure "log.test-human-ball.rsd" *test-human-ball-rsd*)))
+   (test-sphere-human-ball-loop :loop-max 50 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(t t t t) :stop 55 :null-max 0.5 :debug-view nil :gain1 0.05 :gain2 0.01 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre '(10 10 10 10) :rthre '(0.1 0.1 0.1 0.1)) :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose) (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -650)))))))
+  (dump-loadable-structure "log.test-human-ball.rsd" *test-human-ball-rsd*))
+ (t
+  (load "log.test-human-ball.rsd")
+  ))
 
 (defun parse-from-key
   (&optional (key :f))
@@ -78,6 +81,19 @@
   (send rsd :draw :friction-cone? nil :torque-draw? nil)
   (send *viewer* :draw-objects))
 
+(defun format-list
+  (p dl)
+  (let* ((cnt 0))
+    (map cons
+	 #'(lambda (d)
+	     (if (> cnt 0)
+		 (format p " "))
+	     (format p "~A" d)
+	     (incf cnt))
+	 dl)
+    (format p "~%")
+    ))
+
 (defun dump-t1-t2-f1-f2
   (&key (path "t1_t2_f1_f2.log"))
   (let* ((p (open path :direction :output))
@@ -87,7 +103,9 @@
 	  (mapcar '(lambda (tml fl)
 		     (list (nth 1 tml) (nth 2 tml)
 			   (/ (nth 1 fl) (nth 0 fl))
-			   (/ (nth 2 fl) (nth 0 fl))))
+			   (/ (nth 2 fl) (nth 0 fl))
+			   (/ (nth 1 fl) (nth 2 fl))
+			   ))
 		  tm tau))
 	 (av (average-from-key :dummy t1-t2-f1-f2))
 	 (md (midian-from-key :dummy t1-t2-f1-f2))
@@ -95,17 +113,13 @@
 	 )
     (format p ":raw~%")
     (dolist (d t1-t2-f1-f2)
-      (format p "~A ~A ~A ~A~%"
-	      (nth 0 d) (nth 1 d) (nth 2 d) (nth 3 d)))
+      (format-list p d))
     (format p ":average~%")
-    (format p "~A ~A ~A ~A~%"
-	    (aref av 0) (aref av 1) (aref av 2) (aref av 3))
+    (format-list p av)
     (format p ":midian~%")
-    (format p "~A ~A ~A ~A~%"
-	    (aref md 0) (aref md 1) (aref md 2) (aref md 3))
+    (format-list p md)
     (format p ":variance~%")
-    (format p "~A ~A ~A ~A~%"
-	    (aref vr 0) (aref vr 1) (aref vr 2) (aref vr 3))
+    (format-list p vr)
     ;;
     (format p ":skip-cnt~%")
     (let* (sep
@@ -113,10 +127,10 @@
       (dotimes (i (length ret))
 	(push (mapcar #'(lambda (dl) (nth (+ i 2) dl)) t1-t2-f1-f2) sep)
 	(setf (aref ret i) (count-if '(lambda (d) (> d 0.99)) (car sep)))
-	(print (car sep))
+	;; (print (car sep))
 	)
       (setq sep (reverse sep))
-      (format p "0 0 ~A ~A~%"
+      (format p "0 0 ~A ~A 0~%"
 	      (/ (aref ret 0) (length (nth 0 sep)))
 	      (/ (aref ret 1) (length (nth 1 sep)))))
     ;;
