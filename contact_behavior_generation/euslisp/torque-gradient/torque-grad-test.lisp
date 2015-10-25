@@ -62,13 +62,23 @@
   ret)
 
 (defun show-human-ball-pose
-  (rsd &optional (str nil))
+  (rsd &optional (str nil) (friction-cone? nil))
   (cond
    ((or (find *robot* (send *irtviewer* :objects))
 	(not (find *human-ball* (send *irtviewer* :objects))))
     (objects (flatten (list *robot-hand* *human-ball*)))
     (send *irtviewer* :change-background (float-vector 1 1 1))))
-  (send rsd :draw :friction-cone? nil :torque-draw? nil)
+  ;;(send rsd :draw :friction-cone? nil :torque-draw? nil)
+  (send rsd :draw :friction-cone? friction-cone? :torque-draw? nil)
+  (if friction-cone?
+      (progn
+	(send *irtviewer* :objects
+	      (flatten
+	       (list
+		(remove *robot*
+			(remove *human-ball*
+				(send *irtviewer* :objects)))
+		*robot-hand* *human-ball*)))))
   (send *viewer* :draw-objects :flush nil)
   (let* ((y (- (send *viewer* :viewsurface :height) 10)))
     (mapcar
@@ -255,14 +265,18 @@
     (read-line)
     (show-human-ball-pose (nth 1 (cdar rsdl))
 			  (list (format nil "Torque Gradient")
-				(format nil "  (Objective:~A)"
-					(nth 2 (caar rsdl)))))
+				(format nil " (Objective:~A)"
+					(subseq (format nil "~A "
+							(nth 2 (caar rsdl)))
+						0 4))))
     (send *viewer* :viewsurface :write-to-image-file (format nil "~A1.jpg" prefix))
     (read-line)
     (show-human-ball-pose (nth 2 (cdar rsdl))
 			  (list (format nil "Pseudo Gradient")
-				(format nil "  (Objective:~A)"
-					(nth 3 (caar rsdl)))))
+				(format nil " (Objective:~A)"
+					(subseq (format nil "~A "
+							(nth 3 (caar rsdl)))
+						0 4))))
     (send *viewer* :viewsurface :write-to-image-file (format nil "~A2.jpg" prefix))
     ))
 
@@ -286,3 +300,18 @@
  :func '(lambda (f1 f2) (> (- (nth 3 f1) (nth 2 f1))
 			   (- (nth 3 f2) (nth 2 f2))))
  :prefix "pseudo_gt_torque")
+(show-sorted-rsd
+ :func '(lambda (f1 f2) (> (+ (expt (- 1 (nth 3 f1)) 2)
+			      (expt (- 1 (nth 2 f1)) 2))
+			   (+ (expt (- 1 (nth 3 f2)) 2)
+			      (expt (- 1 (nth 2 f2)) 2))))
+ :prefix "pseudo_plus_torque")
+(show-sorted-rsd
+ :func '(lambda (f1 f2)
+	  (< (if (or (> (nth 3 f1) 0.7) (> (nth 2 f1) 0.7))
+		 100
+	       (expt (- (nth 3 f1) (nth 2 f1)) 2))
+	     (if (or (> (nth 3 f2) 0.7) (> (nth 2 f2) 0.7))
+		 100
+	       (expt (- (nth 3 f2) (nth 2 f2)) 2))))
+ :prefix "pseudo_eq_torque")
