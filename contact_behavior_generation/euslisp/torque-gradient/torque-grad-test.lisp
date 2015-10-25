@@ -62,14 +62,26 @@
   ret)
 
 (defun show-human-ball-pose
-  (rsd)
+  (rsd &optional (str nil))
   (cond
    ((or (find *robot* (send *irtviewer* :objects))
 	(not (find *human-ball* (send *irtviewer* :objects))))
     (objects (flatten (list *robot-hand* *human-ball*)))
     (send *irtviewer* :change-background (float-vector 1 1 1))))
   (send rsd :draw :friction-cone? nil :torque-draw? nil)
-  (send *viewer* :draw-objects))
+  (send *viewer* :draw-objects :flush nil)
+  (let* ((y (- (send *viewer* :viewsurface :height) 10)))
+    (mapcar
+     #'(lambda (str)
+	 (cond
+	  ((stringp str)
+	   (send *viewer* :viewsurface :color (float-vector 0 0 0))
+	   (send *viewer* :viewsurface :string 10 y str)
+	   (setq y (- y (text-height str)))
+	   )))
+     (reverse (flatten (list str)))))
+  (send *viewer* :viewsurface :flush)
+  )
 
 (defun format-list
   (p dl)
@@ -190,13 +202,86 @@
   (unix::system "./hist.py")
   hist-data)
 
+(defun sort-rsd
+  (&optional
+   (func '(lambda (f1 f2) (> (- (nth 2 f1) (nth 3 f1))
+			     (- (nth 2 f2) (nth 3 f2))
+			     )))
+   (t1-t2-f1-f2 (gen-t1-t2-f1-f2))
+   (t1-t2-f1-f2-cons (mapcar 'cons t1-t2-f1-f2 (Cdr *test-human-ball-rsd*)))
+   )
+  ;; (mapcar
+  ;;'cdr
+  (sort
+   t1-t2-f1-f2-cons
+   #'(lambda (a b) (funcall func (car a) (car b)))))
+
+(defun text-height
+  (str &optional (font x:font-courb24))
+  (+ (aref (x::textdots str font) 0)
+     (aref (x::textdots str font) 1)))
+
+(in-package "GL")
+(defmethod glviewsurface
+  (:string
+   (x y str &optional (fid x:font-courb24))
+   (send self :makecurrent)
+   (glMatrixMode GL_PROJECTION)
+   (glPushMatrix)
+   (send self :2d-mode)
+   (unless (eq (get self :glxusexfont) fid)
+     (setf (get self :glxusexfont) fid)
+     (glxUseXfont fid 32 96 (+ 1000 32)))
+   (glRasterPos2i (round x) (- (send self :height) (round y)))
+   (glListBase 1000)
+   (glCallLists (length str) GL_UNSIGNED_BYTE str)
+   (send self :3d-mode)
+   (glMatrixMode GL_PROJECTION)
+   (glPopMatrix)
+   (glMatrixMode GL_MODELVIEW)
+   ))
+(in-package "USER")
+
+(defun show-sorted-rsd
+  (&key
+   (func '(lambda (f1 f2) (> (- (nth 2 f1) (nth 3 f1))
+			     (- (nth 2 f2) (nth 3 f2))
+			     )))
+   (prefix "rsd")
+   )
+  (let* ((rsdl (sort-rsd func)))
+    (show-human-ball-pose (nth 0 (cdar rsdl)) (format nil "Initial Posture"))
+    (send *viewer* :viewsurface :write-to-image-file (format nil "~A0.jpg" prefix))
+    (read-line)
+    (show-human-ball-pose (nth 1 (cdar rsdl))
+			  (list (format nil "Torque Gradient")
+				(format nil "  (Objective:~A)"
+					(nth 2 (caar rsdl)))))
+    (send *viewer* :viewsurface :write-to-image-file (format nil "~A1.jpg" prefix))
+    (read-line)
+    (show-human-ball-pose (nth 2 (cdar rsdl))
+			  (list (format nil "Pseudo Gradient")
+				(format nil "  (Objective:~A)"
+					(nth 3 (caar rsdl)))))
+    (send *viewer* :viewsurface :write-to-image-file (format nil "~A2.jpg" prefix))
+    ))
+
 (cond
  ((substringp "true" (unix::getenv "TORQUE_GRAD_TEST"))
   (setq
    *test-human-ball-rsd*
-   (test-sphere-human-ball-loop :loop-max 500 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(t t t t) :stop 55 :null-max 0.3 :debug-view nil :gain1 0.01 :gain2 0.01 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre (make-list 4 :initial-element 10) :rthre (make-list 4 :initial-element (deg2rad 8))) :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose) (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -650)))))))
-  (dump-loadable-structure (format nil "log.test-human-ball.rsd.~A" "tttt.108.500")
+   (test-sphere-human-ball-loop :loop-max 100 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(t t t t) :stop 55 :null-max 0.3 :debug-view nil :gain1 0.01 :gain2 0.01 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre (make-list 4 :initial-element 30) :rthre (make-list 4 :initial-element (deg2rad 12))) :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose) (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -650)))))))
+  (send-all (flatten (cdr *test-human-ball-rsd*)) :clear)
+  (dump-loadable-structure (format nil "log.test-human-ball.rsd.~A" "tttt.3012.100")
                            *test-human-ball-rsd*))
  (t
-  (load "log.test-human-ball.rsd")
+  (load "log.test-human-ball.rsd.tttt.3012.100")
   ))
+
+#|
+
+(show-sorted-rsd :prefix "pseudo_lt_torque")
+(show-sorted-rsd
+ :func '(lambda (f1 f2) (> (- (nth 3 f1) (nth 2 f1))
+			   (- (nth 3 f2) (nth 2 f2))))
+ :prefix "pseudo_gt_torque")
