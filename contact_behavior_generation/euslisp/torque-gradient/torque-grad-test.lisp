@@ -266,16 +266,17 @@
     (send *viewer* :viewsurface :write-to-image-file (format nil "~A2.jpg" prefix))
     ))
 
+(send *robot* :legs :knee-p :min-angle 5)
 (cond
  ((substringp "true" (unix::getenv "TORQUE_GRAD_TEST"))
   (setq
    *test-human-ball-rsd*
-   (test-sphere-human-ball-loop :loop-max 100 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(t t t t) :stop 55 :null-max 0.3 :debug-view nil :gain1 0.01 :gain2 0.01 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre (make-list 4 :initial-element 30) :rthre (make-list 4 :initial-element (deg2rad 12))) :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose) (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -650)))))))
+   (test-sphere-human-ball-loop :loop-max 100 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(t t t t) :stop 55 :null-max 0.3 :debug-view nil :gain1 0.01 :gain2 0.01 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre (make-list 4 :initial-element 30) :rthre (make-list 4 :initial-element (deg2rad 10))) :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose) (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -850)))))))
   (send-all (flatten (cdr *test-human-ball-rsd*)) :clear)
-  (dump-loadable-structure (format nil "log.test-human-ball.rsd.~A" "tttt.3012.100")
+  (dump-loadable-structure (format nil "log.test-human-ball.rsd.~A" "tttt.3010.100.850")
                            *test-human-ball-rsd*))
  (t
-  (load "log.test-human-ball.rsd.tttt.3012.100")
+  ;; (load "log.test-human-ball.rsd.tttt.3012.100")
   ))
 
 #|
