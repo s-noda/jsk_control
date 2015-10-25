@@ -162,7 +162,7 @@
    )
   (dolist (dl f1-f2)
     (dotimes (i (length dl))
-      (setq val (floor (/ (- (nth i dl) (car range)) step)))
+      (setq val (max 0 (floor (/ (- (nth i dl) (car range)) step))))
       (if (< val (length (nth i y)))
 	  (setf (aref (nth i y) val) (+ (aref (nth i y) val) 1)))))
   (list (cons :x x) (cons :y y)))

@@ -32,7 +32,7 @@ plt.bar(pd.X - w/2, pd.Y1, color='b', width=w, label="Torque Gradient", align="c
 plt.bar(pd.X + w/2, pd.Y2, color='g', width=w, label="Qseudo Gradient", align="center")
 
 plt.legend(loc="best")
-plt.ylabel(".")
+plt.ylabel("histgram")
 plt.xlabel("$\|Optimal Torque\|$/$\|Intial Torque\|$")
 
 plt.xticks(pd.X, pd.X)
