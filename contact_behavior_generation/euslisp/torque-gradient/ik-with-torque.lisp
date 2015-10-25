@@ -15,6 +15,7 @@
    '(:rleg :lleg)))
 
 (defvar *ik-convergence-user-check* 0.0)
+(defvar *success?*)
 (defmethod cascaded-link
   (:ik-convergence-check
    (success dif-pos dif-rot
@@ -38,27 +39,28 @@
 		    :centroid-offset-func centroid-offset-func
 		    :translation-axis cog-translation-axis
 		    :update-mass-properties update-mass-properties))))
-   (if success-buf
-       (cond
-	;;((null *best-rsd*) (setq *best-rsd* *now-rsd*))
-	((or
-	  (and *now-rsd* (not *best-rsd*))
-	  (and *best-rsd* *now-rsd*
-	       (not (and (or (send *best-rsd* :full-constrainted)
-			     (send *best-rsd* :buf :contact-wrench-optimize-skip))
-			 (numberp (send *best-rsd* :buf :f))))
-	       (and (or (send *now-rsd* :full-constrainted)
-			(send *now-rsd* :buf :contact-wrench-optimize-skip))
-		    (numberp (send *now-rsd* :buf :f))))
-	  (and *best-rsd* *now-rsd*
-	       (or (send *now-rsd* :full-constrainted)
-		   (send *now-rsd* :buf :contact-wrench-optimize-skip))
-	       (numberp (send *best-rsd* :buf :f))
-	       (numberp (send *now-rsd* :buf :f))
-	       (> (send *best-rsd* :buf :f)
-		  (send *now-rsd* :buf :f))))
-	 (format t "[update-best-rsd] ~A~%" (send *now-rsd* :buf :f))
-	 (setq *best-rsd* *now-rsd*))))
+   (setq *success?* success-buf)
+   ;; (if success-buf
+   ;;     (cond
+   ;; 	;;((null *best-rsd*) (setq *best-rsd* *now-rsd*))
+   ;; 	((or
+   ;; 	  (and *now-rsd* (not *best-rsd*))
+   ;; 	  (and *best-rsd* *now-rsd*
+   ;; 	       (not (and (or (send *best-rsd* :full-constrainted)
+   ;; 			     (send *best-rsd* :buf :contact-wrench-optimize-skip))
+   ;; 			 (numberp (send *best-rsd* :buf :f))))
+   ;; 	       (and (or (send *now-rsd* :full-constrainted)
+   ;; 			(send *now-rsd* :buf :contact-wrench-optimize-skip))
+   ;; 		    (numberp (send *now-rsd* :buf :f))))
+   ;; 	  (and *best-rsd* *now-rsd*
+   ;; 	       (or (send *now-rsd* :full-constrainted)
+   ;; 		   (send *now-rsd* :buf :contact-wrench-optimize-skip))
+   ;; 	       (numberp (send *best-rsd* :buf :f))
+   ;; 	       (numberp (send *now-rsd* :buf :f))
+   ;; 	       (> (send *best-rsd* :buf :f)
+   ;; 		  (send *now-rsd* :buf :f))))
+   ;; 	 (format t "[update-best-rsd] ~A~%" (send *now-rsd* :buf :f))
+   ;; 	 (setq *best-rsd* *now-rsd*))))
    (and (numberp *ik-convergence-user-check*)
 	(< *ik-convergence-user-check* 0.1) success success-buf)))
 
@@ -239,7 +241,30 @@
       (send *now-rsd* :buf :tau tau)
       (send *now-rsd* :buf :f (norm tau))
       (send *now-rsd* :buf :lname
-	    (send-all (remove root-link ul) :name))))
+	    (send-all (remove root-link ul) :name))
+      ;;
+      (if *success?*
+	  (cond
+	   ;;((null *best-rsd*) (setq *best-rsd* *now-rsd*))
+	   ((or
+	     (and *now-rsd* (not *best-rsd*))
+	     (and *best-rsd* *now-rsd*
+		  (not (and (or (send *best-rsd* :full-constrainted)
+				(send *best-rsd* :buf :contact-wrench-optimize-skip))
+			    (numberp (send *best-rsd* :buf :f))))
+		  (and (or (send *now-rsd* :full-constrainted)
+			   (send *now-rsd* :buf :contact-wrench-optimize-skip))
+		       (numberp (send *now-rsd* :buf :f))))
+	     (and *best-rsd* *now-rsd*
+		  (or (send *now-rsd* :full-constrainted)
+		      (send *now-rsd* :buf :contact-wrench-optimize-skip))
+		  (numberp (send *best-rsd* :buf :f))
+		  (numberp (send *now-rsd* :buf :f))
+		  (> (send *best-rsd* :buf :f)
+		     (send *now-rsd* :buf :f))))
+	    (format t "[update-best-rsd] ~A~%" (send *now-rsd* :buf :f))
+	    (setq *best-rsd* *now-rsd*))))
+      ))
     (cond
      ((eq mode :normal)
       (setq
