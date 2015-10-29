@@ -4,7 +4,7 @@
 (require "motion-sequencer.lisp")
 (require "dynamic-connector.lisp")
 
-;; (require "motion-planners/motion-planner.lisp") (defun demo-motion-sequence (&rest args) (apply 'demo-motion-sequence2 (append (list :error-thre 1.1) args)))
+(require "motion-planners/motion-planner.lisp") (defun demo-motion-sequence (&rest args) (apply 'demo-motion-sequence2 (append (list :error-thre 1.1) args)))
 
 (defun test-proc
   (key)
@@ -42,7 +42,7 @@
 	   (quit-graph)))
 	 (atom rsd))
        (print 'kirin-ladder-error)
-       (exit -1))))
+       t)))
     (:rock-wall
      (cond
       ((let* ((init (demo-climb-setup :rock-wall))
@@ -59,7 +59,7 @@
 	   (quit-graph)))
 	 (atom rsd))
        (print 'rock-wall-error)
-       (exit -1))))
+       t)))
     (:four-leg-seat
      (cond
       ((let* ((init
@@ -88,7 +88,7 @@
 	   (quit-graph)))
 	 (atom rsd))
        (print 'four-leg-seat-error)
-       (exit -1))))
+       t)))
     ;; ((progn
     ;;    (demo-climb-setup :param-ladder)
     ;;    (atom (demo-motion-sequence-with-timer
@@ -126,6 +126,7 @@
 		    :tmax-hand-rate 1.0
 		    :tmax-leg-rate 1.0
 		    :log-file (format nil "~A/simple-floor" *log-root*)
+		    :ref-order '(:rarm :larm :rleg :lleg)
 		    )))
 	 (cond
 	  ((and (listp rsd)
@@ -135,7 +136,7 @@
 	   ))
 	 (atom rsd))
        (print 'simple-floor-error)
-       (exit -1))))
+       t)))
     ))
 
 ;; start test
@@ -144,10 +145,43 @@
 (defvar *ik-debug-view* nil) ;;:no-message)
 (unix:system (format nil "mkdir ~A" *log-root*))
 
-(test-proc :kirin-ladder)
-(test-proc :rock-wall)
-(test-proc :four-leg-seat)
-(test-proc :simple-floor)
+(if (or
+     (test-proc :kirin-ladder)
+     (test-proc :rock-wall)
+     (test-proc :four-leg-seat)
+     (print (test-proc :simple-floor)))
+    (exit -1))
 
 (print 'all-ok)
 (exit 0)
+
+#|
+
+(defvar *standup*
+  (cdar (rsd-deserialize :file "log/Tue_Oct_27_23:34:48_2015/simple-floor.rsd")))
+(let* ((id -1))
+  (dolist (rsd (cons (progn (send *best-facefall* :draw :friction-cone? nil)
+			    (optimize-brli :contact-states *facefall-contact-state*))
+		     *standup*))
+    (cond
+     ((find (send rsd :buf :mseq-mode) '(:remove :reach))
+      (send rsd :draw :rest (list *climb-obj*) :torque-draw? nil)
+      (objects (list *robot*))
+      (send *viewer* :viewsurface :write-to-image-file
+	    (format nil "buf/~A.jpg" (incf id)))
+      (read-line)
+      )))
+  (let* ((legs (send *robot* :legs :end-coords :copy-worldcoords)))
+    (send *robot* :reset-pose)
+    (send *robot* :fix-leg-to-coords (car legs) :lleg)
+    (send *robot* :inverse-kinematics
+	  legs
+	  :move-target (send *robot* :legs :end-coords)
+	  :link-list (mapcar
+		      '(lambda (mt) (send *robot* :link-list (send mt :parent)))
+		      (send *robot* :legs :end-coords)))
+    (send *irtviewer* :objects (list *robot* *climb-obj*))
+    (send *viewer* :draw-objects)
+    (send *viewer* :viewsurface :write-to-image-file
+	  (format nil "buf/~A.jpg" (incf id)))
+    ))
