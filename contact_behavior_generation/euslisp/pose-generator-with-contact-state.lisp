@@ -169,12 +169,20 @@
 				 (list (cons :target (send cs :contact-coords))
 				       (cons :coords (send cs :target-coords))
 				       (cons :thre 20)
-				       ;; (cons :translation-axis (send cs :translation-axis))
-				       ;; (cons :rotation-axis (send cs :rotation-axis))
+				       (cons :translation-axis
+					     (send cs :translation-axis))
+				       (cons :rotation-axis (send cs :rotation-axis))
 				       ))
 			     ik-contact-states)
-		     (mapcar #'(lambda (fc ftc) (list (cons :target fc)
-						      (cons :coords ftc)))
+		     (mapcar #'(lambda (cs fc ftc)
+				 (list (cons :target fc)
+				       (cons :coords ftc)
+				       (cons :translation-axis
+					     (send cs :translation-axis))
+				       (cons :rotation-axis
+					     (send cs :rotation-axis))
+				       ))
+			     rest-contact-states
 			     fix-coords
 			     fix-target-coords)
 		     (mapcar #'(lambda (cs)
@@ -200,10 +208,12 @@
 	  :move-target move-target
 	  :limb-target-coords target-coords
 	  :float-cascoords float-cascoords
-	  ;; :translation-axis (send-all ik-contact-states :translation-axis)
-	  ;; :rotation-axis (send-all ik-contact-states :rotation-axis)
+	  :translation-axis (send-all ik-contact-states :translation-axis)
+	  :rotation-axis (send-all ik-contact-states :rotation-axis)
 	  :fix-coords fix-coords
 	  :fix-target-coords fix-target-coords
+	  :fix-translation-axis (send-all rest-contact-states :translation-axis)
+	  :fix-rotation-axis (send-all rest-contact-states :rotation-axis)
 	  :centroid
 	  (if (eq c (send *robot* :centroid)) nil c)
 	  :centroid-thre centroid-thre

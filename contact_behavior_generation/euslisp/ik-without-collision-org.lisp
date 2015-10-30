@@ -259,6 +259,8 @@
    (fix-coords nil)
    (fix-target-coords (mapcar #'(lambda (c) (copy-object (send c :worldcoords)))
 			      fix-coords))
+   (fix-translation-axis (make-list (length fix-coords) :initial-element t))
+   (fix-rotation-axis (make-list (length fix-coords) :initial-element t))
    (depth 0)
    (stop 5)
    (log-head "  ")
@@ -281,11 +283,15 @@
 	     translation-axis
 	     rotation-axis
 	     keep-centroid-ik-option)
-     (mapcar #'(lambda (fc ftc)
+     (mapcar #'(lambda (fc ftc ta ra)
 		 (list (cons :target fc)
-		       (cons :coords ftc)))
+		       (cons :coords ftc)
+		       (cons :translation-axis ta)
+		       (cons :rotation-axis ra)))
 	     fix-coords
-	     fix-target-coords)
+	     fix-target-coords
+	     fix-translation-axis
+	     fix-rotation-axis)
      (mapcar #'(lambda (cs)
 		 (list (cons :target cs)
 		       (cons :coords (send cs :copy-worldcoords))
