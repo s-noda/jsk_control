@@ -676,7 +676,7 @@
   ;; remove black-listed args
   (setq args (remove-args-values args (list :remove-limb)))
   ;;
-  (send now-rsd :draw :friction-cone? nil) ;; back track
+  (send now-rsd :draw :friction-cone? nil) ;; for back track
   (if (or (not now-rsd) (not (send now-rsd :full-constrainted)))
       (return-from demo-motion-sequence2 :agry-now-rsd))
   (if (and (boundp '*viewer*) *viewer*)

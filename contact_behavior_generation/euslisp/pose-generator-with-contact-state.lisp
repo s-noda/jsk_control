@@ -73,7 +73,8 @@
 	    (copy-object (send ret :angle-vector)))
       (send *robot* :newcoords
 	    (copy-object (send ret :root-coords)))
-      (send ret :fix-coords)
+      ;; for transaltion/rotation-axis
+      ;; (send ret :fix-coords)
       ))
     ret))
 
