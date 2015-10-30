@@ -72,7 +72,7 @@
     ((:slip-matrix sm) (send self :gen-slip-matrix ux uy uz lx ly))
     ((:force0 f0) #F(80 80 80 20 20 20))
     ((:target-coords tc) (copy-object (send cc :worldcoords)))
-    ((:default-target-coords ts) tc)
+    ((:default-target-coords ts) (copy-object tc))
     ((:gain g) '(1 1 10))
     ((:translation-axis ta) t)
     ((:rotation-axis ra) t)
@@ -100,9 +100,11 @@
    (setq sequence-select ss)
    (setq fz-max fm)
    )
+  (:reset-target-coords
+   nil (setq target-coords (copy-object default-target-coords)))
+  ;; @deprecated
   (:fix-coords
-   nil
-   (setq target-coords (copy-object (send contact-coords :worldcoords))))
+   nil (setq target-coords (copy-object (send contact-coords :worldcoords))))
   (:copy
    (&rest args)
    (eval
