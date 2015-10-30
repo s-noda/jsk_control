@@ -179,18 +179,21 @@
    (if log (send self :log))
    self
    )
+  (:reset-target-coords
+   nil (send-all contact-states :reset-target-coords))
+  ;; @deprecated
   (:fix-coords
-   nil
-   (send-all contact-states :fix-coords))
-					;   (setq contact-states
-					;	 (mapcar
-					;	  #'(lambda (cs)
-					;	      (send cs :copy
-					;		    :target-coords
-					;		    (copy-object
-					;		     (send (send cs :contact-coords)
-					;			   :worldcoords))))
-					;	  contact-states)))
+   nil (send-all contact-states :fix-coords))
+  ;; (:fix-contact-states
+  ;;  nil
+  ;;  (setq contact-states
+  ;; 	 (mapcar
+  ;; 	  #'(lambda (cs)
+  ;; 	      (send cs :copy
+  ;; 		    :target-coords
+  ;; 		    (send (send cs :contact-coords)
+  ;; 			  :copy-worldcoords))))
+  ;; 	 contact-states))
   (:copy
    (&rest args)
    (eval
@@ -571,7 +574,7 @@
 	     contact-keys graph joint-list)
 	    (send-all graph :simple-draw-with-line)))
 	  (incf index)
-	  (let* ((buf (if auto? (progn (unix:usleep (round (* 1e+3 100))) "") (read-line)))
+	  (let* ((buf (if auto? (progn (unix:usleep (round (* 1e+3 30))) "") (read-line)))
 		 (tar (if (plusp (length buf)) (aref buf 0) nil)))
 	    (case tar (#\q (setq break? t))))
 	  (send rsd :full-constrainted))
