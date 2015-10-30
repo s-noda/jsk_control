@@ -4,7 +4,7 @@
 (require "motion-sequencer.lisp")
 (require "dynamic-connector.lisp")
 
-(require "motion-planners/motion-planner.lisp") (defun demo-motion-sequence (&rest args) (apply 'demo-motion-sequence2 (append (list :error-thre 1.1) args)))
+(require "motion-planners/motion-planner.lisp") (defun demo-motion-sequence (&rest args) (let* ((ret (apply 'demo-motion-sequence2 (append (list :error-thre 1.1) args)))) (cons (car ret) (reverse (cdr ret)))))
 
 (defun test-proc
   (key)
@@ -142,14 +142,14 @@
 ;; start test
 
 (defvar *log-root* (format nil "log/~A" (log-surfix)))
-(defvar *ik-debug-view* nil) ;;:no-message)
+(defvar *ik-debug-view* :no-message)
 (unix:system (format nil "mkdir ~A" *log-root*))
 
 (if (or
      (test-proc :kirin-ladder)
      (test-proc :rock-wall)
      (test-proc :four-leg-seat)
-     (print (test-proc :simple-floor)))
+     (test-proc :simple-floor))
     (exit -1))
 
 (print 'all-ok)
