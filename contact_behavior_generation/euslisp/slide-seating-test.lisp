@@ -84,3 +84,41 @@
     (setq *goal-contact-state* (nth i *contact-states*))
     (if (test-proc) (push i ret)))
   (push (print ret) *reachable-contact-state-ids*))
+
+(defun draw-id
+  (&rest
+   args
+   &key
+   (ids nil)
+   (csl
+    (if (not ids) *contact-states*
+      (let* ((buf))
+	(dolist (id ids) (push (nth id *contact-states*) buf))
+	buf)))
+   (color (float-vector 1 0 0))
+   (width 4)
+   (size 30)
+   (min-size width)
+   v)
+  ;;
+  (send *viewer* :viewsurface :line-width width)
+  (send *viewer* :viewsurface :color color)
+  ;;
+  (dolist (cs csl)
+    (setq v (send (send cs :target-coords) :worldpos))
+    (send *viewer* :viewsurface :3d-lines
+	  (list (v+ (float-vector size size 0) v)
+		(v+ (float-vector (* -1 size) size 0) v)
+		(v+ (float-vector (* -1 size) (* -1 size) 0) v)
+		(v+ (float-vector size (* -1 size) 0) v)
+		(v+ (float-vector size size 0) v)
+		)))
+  (if (> size min-size)
+      (apply 'draw-id :size (- size width) args)
+    (send *viewer* :viewsurface :flush)))
+
+(send *viewer* :draw-objects)
+(draw-id :color (float-vector 0 1 0) :size 40)
+(draw-id :ids (nth 1 *reachable-contact-state-ids*) :color (float-vector 0 0 1) :size 28)
+(draw-id :ids (nth 0 *reachable-contact-state-ids*) :color (float-vector 1 0 0) :size 15)
+;; (draw-id :ids (apply 'intersection *reachable-contact-state-ids*) :color (float-vector 1 1 0))
