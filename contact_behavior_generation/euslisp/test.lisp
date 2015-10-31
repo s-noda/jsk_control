@@ -4,7 +4,7 @@
 (require "motion-sequencer.lisp")
 (require "dynamic-connector.lisp")
 
-(require "motion-planners/motion-planner.lisp") (defun demo-motion-sequence (&rest args) (let* ((ret (apply 'demo-motion-sequence2 (append (list :error-thre 1.1) args)))) (cons (car ret) (reverse (cdr ret)))))
+(require "motion-planners/motion-planner.lisp") (defun demo-motion-sequence (&rest args) (let* ((ret (apply 'demo-motion-sequence2 (append args (list :error-thre 1.1))))) (cons (car ret) (reverse (cdr ret)))))
 
 (defun test-proc
   (key)
@@ -122,11 +122,13 @@
 		       (let* ((ret (simple-fullbody :target (list (list (cons :target :rarm)) (list (cons :target :larm)) (list (cons :target :rleg)) (list (cons :target :lleg))) :debug-view nil :stop 30 :centroid-thre 100 :warnp nil)))
 			 (if ret (send *viewer* :draw-objects)) ret))
 		    ;; :cs-filter-func '(lambda (&rest args) (car args))
-		    :rms-loop-max 8
+		    :cs-eval-gains '(1 1)
+		    :rms-loop-max 2
 		    :tmax-hand-rate 1.0
 		    :tmax-leg-rate 1.0
 		    :log-file (format nil "~A/simple-floor" *log-root*)
 		    :ref-order '(:rarm :larm :rleg :lleg)
+		    ;; :error-thre 0.7
 		    )))
 	 (cond
 	  ((and (listp rsd)
@@ -142,7 +144,7 @@
 ;; start test
 
 (defvar *log-root* (format nil "log/~A" (log-surfix)))
-(defvar *ik-debug-view* :no-message)
+(defvar *ik-debug-view* nil) ;;:no-message)
 (unix:system (format nil "mkdir ~A" *log-root*))
 
 (if (or
