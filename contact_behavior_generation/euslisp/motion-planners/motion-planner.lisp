@@ -30,6 +30,7 @@
 	  cs-eval-scale-key
 	  candidates-sequencial-factor
 	  sequencial-select-factor-map
+	  cs-eval-gain
 	  planner-sequencial-factor
 	  planner-sequencial-factor-rate
 	  ))
@@ -51,6 +52,7 @@
     ((:sequencial-select-factor-map ssfm) (make-hash-table))
     ((:planner-sequencial-factor psf) 1.0)
     ((:planner-sequencial-factor-rate psfr) 0.8)
+    ((:cs-eval-gain cseg) 1.0)
     &allow-other-keys)
    (send-super :name name)
    (setq now-robot-state rs)
@@ -67,6 +69,7 @@
    ;;
    (setq now-cs-key (read-from-string (format nil "~A-now-cs" name)))
    (setq cs-object-key (read-from-string (format nil "~A-objective" name)))
+   (setq cs-eval-gain cseg)
    ;; (setq cs-eval-scale-key (read-from-string (format nil "~A-eval-scale" name)))
    ;; (send-all candidate-contact-states :buf cs-eval-scale-key 1)
    (setq error-thre et)
@@ -117,6 +120,7 @@
        (send cs :buf now-cs-key now-cs)
        (send cs :buf cs-object-key
 	     (*
+	      cs-eval-gain
 	      (or (send sequencial-select-factor-map :get (send cs :name))
 		  1.0)
 	      (send cs :eval now-cs now-robot-state
@@ -635,6 +639,11 @@
    (motion-planner-names
     (list static-walk-motion-planner slide-motion-planner))
    (sequencial-select-factor-map (make-hash-table))
+   (cs-eval-gains ;; default priority mode
+    (let* ((buf) (gain 1.0) (step 0.99))
+      (dolist (l motion-planner-names)
+	(push gain buf) (setq gain (* step gain)))
+      (reverse buf)))
    (motion-planners
     (let ((cs-candidates (if (functionp cs-filter-func)
 			     (funcall cs-filter-func
@@ -646,14 +655,15 @@
 				      )
 			   all-cs-candidates)))
       (mapcar
-       #'(lambda (name)
+       #'(lambda (name g)
 	   (instance* name :init
 		      :candidate-contact-states cs-candidates
 		      :sequencial-select-factor-map
 		      (copy-object sequencial-select-factor-map)
 		      :now-robot-state now-rsd
+		      :cs-eval-gain g
 		      args))
-       motion-planner-names)))
+       motion-planner-names cs-eval-gains)))
    ;;
    (graph-stack nil) ;;(instance stack-list :init))
    (time-buf (float-vector 0 0 0))
