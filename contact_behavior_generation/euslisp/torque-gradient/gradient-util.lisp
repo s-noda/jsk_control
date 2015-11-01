@@ -121,7 +121,7 @@
   (:joint-worldcoords
    nil
    (if (and parent-link (find-method parent-link :copy-worldcoords))
-       (send (copy-object (send parent-link :worldcoords))
+       (send (send (send parent-link :worldcoords) :copy-worldcoords)
 	     :transform default-coords)))
   (:parent-joint nil
 		 (let (pj)
@@ -148,7 +148,7 @@
 			   :local)
 		     :local))
        (send
-	(copy-object (send parent-link :worldcoords))
+	(send (send parent-link :worldcoords) :copy-worldcoords)
 	:transform tc :local))))
   (:joint-worldcoords-test
    nil
@@ -159,14 +159,14 @@
       (scale 1e-3 (send w1 :difference-position w2))
       (send w1 :difference-rotation w2))))
   (:parent-link2joint-transformation ;; constant value expected
-   nil (send (copy-object (send parent-link :worldcoords))
+   nil (send (send (send parent-link :worldcoords) :copy-worldcoords)
 	     :transformation
 	     (send self :joint-worldcoords)
 	     :local))
   (:joint2link-transformation ;; rodrigues
    nil (send (send self :joint-worldcoords)
 	     :transformation
-	     (copy-object (send child-link :worldcoords))
+	     (send (send child-link :worldcoords) :copy-worldcoords)
 	     :local))
   (:local-axis-vector
    nil
@@ -301,13 +301,14 @@
    (joint (car joint-list))
    (tc
     (coordinates-matrix
-     (send (copy-object
+     (send (send
 	    (send
 	     (if (and joint (send joint :child-link))
 		 (send joint :child-link) root-link)
-	     :worldcoords))
+	     :worldcoords)
+	    :copy-worldcoords)
 	   :transformation
-	   (copy-object (send move-target :worldcoords))
+	   (send (send move-target :worldcoords) :copy-worldcoords)
 	   :local)
      :scale (if meter? 1e-3 1)))
    &allow-other-keys
@@ -321,7 +322,7 @@
 	     (if (assoc root-link target-joint-list)
 		 (coordinates-matrix
 		  (6dof-gradient-coords
-		   (copy-object (send root-link :worldcoords))
+		   (send (send root-link :worldcoords) :copy-worldcoords)
 		   (flatten
 		    (mapcar
 		     #'cdr
@@ -332,7 +333,7 @@
 		   :meter? meter?)
 		  :gradient? t)
 	       (coordinates-matrix
-		(copy-object (send root-link :worldcoords))
+		(send (send root-link :worldcoords) :copy-worldcoords)
 		:scale (if meter? 1e-3 1)))
 	     tc))))
       ret))
