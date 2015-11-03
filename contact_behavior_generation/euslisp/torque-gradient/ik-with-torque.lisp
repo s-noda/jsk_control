@@ -134,8 +134,8 @@
 	  (progn (setq *ik-convergence-user-check* 0.0)
 		 (print 'not-full-constrainted-rsd)))
     (send *now-rsd* :buf :contact-wrench-optimize-skip t))
-  (setq *rsd-queue*
-	(subseq (cons *now-rsd* *rsd-queue*) 0 100))
+  ;; (setq *rsd-queue*
+  ;; (subseq (cons *now-rsd* *rsd-queue*) 0 100))
   (setq buf
 	(mapcar
 	 #'cons
@@ -158,7 +158,7 @@
   (&rest
    args
    &key
-   (robot (copy-object *robot*))
+   (robot *robot*)
    (key-list '(:rleg :lleg))
    (wrench-key-list key-list)
    (wrench-list 'simple-calc-contact-wrench)
@@ -205,8 +205,9 @@
 		  (copy-seq
 		   (send *robot* :angle-vector)))
 	    (send robot :newcoords
-		  (copy-object
-		   (send *robot* :worldcoords)))
+		  (send
+		   (send *robot* :worldcoords)
+		   :copy-worldcoords))
 	    (send-all (send *robot* :links)
 		      :worldcoords)
 	    (send-all (send robot :links)
@@ -248,13 +249,13 @@
 	   ;;((null *best-rsd*) (setq *best-rsd* *now-rsd*))
 	   ((or
 	     (and *now-rsd* (not *best-rsd*))
+	     (and *best-rsd*
+		  (not (numberp (send *best-rsd* :buf :f))))
 	     (and *best-rsd* *now-rsd*
-		  (not (and (or (send *best-rsd* :full-constrainted)
-				(send *best-rsd* :buf :contact-wrench-optimize-skip))
-			    (numberp (send *best-rsd* :buf :f))))
-		  (and (or (send *now-rsd* :full-constrainted)
-			   (send *now-rsd* :buf :contact-wrench-optimize-skip))
-		       (numberp (send *now-rsd* :buf :f))))
+		  (not (or (send *best-rsd* :full-constrainted)
+			   (send *best-rsd* :buf :contact-wrench-optimize-skip)))
+		  (or (send *now-rsd* :full-constrainted)
+		      (send *now-rsd* :buf :contact-wrench-optimize-skip)))
 	     (and *best-rsd* *now-rsd*
 		  (or (send *now-rsd* :full-constrainted)
 		      (send *now-rsd* :buf :contact-wrench-optimize-skip))
@@ -448,7 +449,8 @@
 	 (list :robot
 	       (if (and (boundp '*rotational-6dof-fix-leg*) *rotational-6dof-fix-leg*)
 		   robot
-		 (setq robot (copy-object *robot*)))
+		 (setq robot (copy-object *robot*))
+		 )
 	       :move-target move-target
 	       :link-list link-list
 	       )
