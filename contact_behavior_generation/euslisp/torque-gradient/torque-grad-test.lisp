@@ -282,12 +282,39 @@
 
 (send *robot* :legs :knee-p :min-angle 5)
 (cond
- ((substringp "true" (unix::getenv "TORQUE_GRAD_TEST"))
+ ((substringp "true" (unix::getenv "TORQUE_GRAD_OPTIMAL_TEST"))
+  (print "TORQUE_GRAD_OPTIMAL_TEST")
   (setq
    *test-human-ball-rsd*
-   (test-sphere-human-ball-loop :loop-max 100 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(t t t t) :stop 55 :null-max 0.3 :debug-view nil :gain1 0.01 :gain2 0.01 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre (make-list 4 :initial-element 30) :rthre (make-list 4 :initial-element (deg2rad 10))) :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose) (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -850)))))))
+   (test-sphere-human-ball-loop :loop-max 100 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(t t t t) :stop 100 :null-max 0.3 :debug-view nil :gain1 0.03 :gain2 0.03 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre (make-list 4 :initial-element 30) :rthre (make-list 4 :initial-element (deg2rad 10))) :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose) (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -850)))))))
   (send-all (flatten (cdr *test-human-ball-rsd*)) :clear)
-  (dump-loadable-structure (format nil "log.test-human-ball.rsd.~A" "tttt.3010.100.850")
+  (dump-loadable-structure (format nil "log.test-human-ball-optimal.rsd.~A" "tttt.3010.100.850")
+                           *test-human-ball-rsd*))
+ ((substringp "true" (unix::getenv "TORQUE_GRAD_SOLVABLE_TEST"))
+  (print "TORQUE_GRAD_SOLVABLE_TEST")
+  ;; (send-all (send *robot* :joint-list) :max-joint-torque 1000)
+  ;;
+  (setq
+   *test-human-ball-rsd*
+   (test-sphere-human-ball-loop :test-mode :solvable :loop-max 100 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(t t t t) :stop 100 :null-max 0.3 :debug-view nil :gain1 0.03 :gain2 0.03 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre (make-list 4 :initial-element 30) :rthre (make-list 4 :initial-element (deg2rad 10))) :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose) (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -850)))))))
+  ;;
+  (let* ((len (length (cdr *test-human-ball-rsd*)))
+	 (p1 (count-if #'(lambda (rsdl)
+			   (or (send (nth 1 rsdl) :full-constrainted)
+			       (send (nth 1 rsdl) :buf :contact-wrench-optimize-skip))
+			   )
+		       (cdr *test-human-ball-rsd*)))
+	 (p2 (count-if #'(lambda (rsdl)
+			   (or (send (nth 2 rsdl) :full-constrainted)
+			       (send (nth 2 rsdl) :buf :contact-wrench-optimize-skip))
+			   )
+		       (cdr *test-human-ball-rsd*)))
+	 )
+    (format t "solveable rate ~A/~A vs ~A/~A~%"
+	    p1 len p2 len))
+  ;;
+  (send-all (flatten (cdr *test-human-ball-rsd*)) :clear)
+  (dump-loadable-structure (format nil "log.test-human-ball-solvable.rsd.~A" "tttt.3010.50.850")
                            *test-human-ball-rsd*))
  (t
   ;; (load "log.test-human-ball.rsd.tttt.3012.100")
