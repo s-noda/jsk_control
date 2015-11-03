@@ -44,7 +44,7 @@
 			 (send j :min-angle))))
    (send *robot* :joint-list))
   (send *robot* :newcoords
-	(make-coords :rpy (scale 1.57 (random-vector))))
+	(make-coords :rpy (scale (deg2rad 30) (random-vector))))
   (send-all (send *robot* :links) :worldcoords)
   (cond
    ((not (and (boundp '*viewer*) *viewer*))
@@ -82,15 +82,17 @@
    (move-step 100)
    (move-max move-max-max) ;;(random move-max-max))
    (move-dir (random-vector))
+   (target-coords
+    (mapcar
+     '(lambda (k) (send (send *robot* k :end-coords) :copy-worldcoords))
+     key-list))
    )
   (while
       (send *robot* :fullbody-inverse-kinematics
 	    (cons
 	     (send (send (send *robot* :torso :end-coords) :copy-worldcoords)
 		   :translate (scale move-step move-dir))
-	     (mapcar
-	      '(lambda (k) (send (send *robot* k :end-coords) :copy-worldcoords))
-	      key-list))
+	     target-coords)
 	    :move-target
 	    (mapcar
 	     '(lambda (k) (send *robot* k :end-coords))
@@ -280,12 +282,15 @@
 	false nil)
   (let* ((len 100) buf)
     (while (< (length both) len)
+      (warning-message 2 "[both] ~A/~A~%" (length both) len)
       (setq buf (gen-solvable-random-contact-pose :solvable? :both))
       (if buf (push buf both)))
     (while (< (length true) len)
+      (warning-message 2 "[true] ~A/~A~%" (length both) len)
       (setq buf (gen-solvable-random-contact-pose :solvable? t))
       (if buf (push buf true)))
     (while (< (length false) len)
+      (warning-message 2 "[false] ~A/~A~%" (length both) len)
       (setq buf (gen-solvable-random-contact-pose :solvable? nil))
       (if buf (push buf false)))
     (list both true false))
