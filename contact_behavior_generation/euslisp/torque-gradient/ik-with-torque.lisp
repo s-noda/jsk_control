@@ -131,7 +131,7 @@
   ;; (send *now-rsd* :draw) (read-line)
   (if contact-wrench-optimize?
       (if (not (send *now-rsd* :full-constrainted))
-	  (progn (setq *ik-convergence-user-check* 0.0)
+	  (progn ;; (setq *ik-convergence-user-check* 0.0)
 		 (print 'not-full-constrainted-rsd)))
     (send *now-rsd* :buf :contact-wrench-optimize-skip t))
   ;; (setq *rsd-queue*
