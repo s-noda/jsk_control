@@ -282,17 +282,18 @@
   (print "TORQUE_GRAD_OPTIMAL_TEST")
   (setq
    *test-random-contact-rsd*
-   (loop-test-random-contact-pose :loop-max 100 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(:z :z :x :x) :stop 50 :null-max 0.3 :debug-view nil :gain1 0.03 :gain2 0.03 :rest-torque-ik-args (list :contact-wrench-optimize? t) :dataset (progn (if (not (and (boundp 'true) true)) (load "random_contact_pose.true.rsd")) true)))
+   (loop-test-random-contact-pose :test-mode :optimality :stop 100 :null-max 0.3 :debug-view nil :gain1 0.005 :gain2 0.005 :rest-torque-ik-args (list :contact-wrench-optimize? t) :dataset (progn (if (not (and (boundp 'both) both)) (load "random_contact_pose.both.rsd")) both)))
   (send-all (flatten (cdr *test-random-contact-rsd*)) :clear)
   (dump-loadable-structure (format nil "log.test-random-contact-optimal.rsd")
-                           *test-random-contact-rsd*))
+                           *test-random-contact-rsd*)
+  (dump-t1-t2-f1-f2))
  ((substringp "true" (unix::getenv "TORQUE_GRAD_SOLVABLE_TEST"))
   (print "TORQUE_GRAD_SOLVABLE_TEST")
   ;; (send-all (send *robot* :joint-list) :max-joint-torque 1000)
   ;;
   (setq
    *test-random-contact-rsd*
-   (loop-test-random-contact-pose :test-mode :solvability :loop-max 100 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(:z :z :x :x) :stop 50 :null-max 0.3 :debug-view nil :gain1 0.03 :gain2 0.03 :rest-torque-ik-args (list :contact-wrench-optimize? t)))
+   (loop-test-random-contact-pose :test-mode :solvability :stop 100 :null-max 0.3 :debug-view nil :gain1 0.005 :gain2 0.005 :rest-torque-ik-args (list :contact-wrench-optimize? t) :dataset (progn (if (not (and (boundp 'both) both)) (load "random_contact_pose.both.rsd")) both)))
   ;;
   (let* ((len (length (cdr *test-random-contact-rsd*)))
 	 (p1 (count-if #'(lambda (rsdl)
