@@ -126,11 +126,15 @@
    (stop 10)
    (solvable? :both)
    (ret nil) buf flag
+   (skip-func)
    &allow-other-keys)
   (apply 'random-contact-pose args)
   (dotimes (i stop)
     (setq buf (random-torso-move))
     (cond
+     ((and (functionp skip-func)
+           (funcall skip-func *now-rsd*))
+      'skip)
      ((eq solvable? :both)
       (push *now-rsd* ret)
       (if buf (setq solvable? nil) (setq solvable? t))
@@ -278,6 +282,7 @@
 (defun gen-database-random-contact-pose
   nil
   (setq both nil
+        both2 nil
 	true nil
 	false nil)
   (let* ((len 100) buf)
@@ -285,6 +290,15 @@
       (warning-message 2 "[both] ~A/~A~%" (length both) len)
       (setq buf (gen-solvable-random-contact-pose :solvable? :both))
       (if buf (push buf both)))
+    (while (< (length both2) len)
+      (warning-message 2 "[both2] ~A/~A~%" (length both2) len)
+      (setq buf (gen-solvable-random-contact-pose
+                 :solvable? :both
+                 :skip-func '(lambda (rsd)
+                               (>
+                                (apply 'max (mapcar 'abs (apply 'concatenate (cons cons (send rsd :f/fmax)))))
+                                1.01))))
+      (if buf (push buf both2)))
     (while (< (length true) len)
       (warning-message 2 "[true] ~A/~A~%" (length both) len)
       (setq buf (gen-solvable-random-contact-pose :solvable? t))
@@ -296,6 +310,7 @@
     (list both true false))
   (send-all (flatten (list both true false)) :clear)
   (dump-loadable-structure "random_contact_pose.both.rsd" both)
+  (dump-loadable-structure "random_contact_pose.both2.rsd" both2)
   (dump-loadable-structure "random_contact_pose.true.rsd" true)
   (dump-loadable-structure "random_contact_pose.false.rsd" false)
   )
