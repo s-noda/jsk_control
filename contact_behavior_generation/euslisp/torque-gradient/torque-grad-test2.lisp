@@ -280,20 +280,26 @@
 (cond
  ((substringp "true" (unix::getenv "TORQUE_GRAD_OPTIMAL_TEST"))
   (print "TORQUE_GRAD_OPTIMAL_TEST")
+  (if (not (and (boundp 'true) true))
+      (load "random_contact_pose.rsd.cygnus.04112015/random_contact_pose.true.rsd"))
   (setq
    *test-random-contact-rsd*
-   (loop-test-random-contact-pose :test-mode :optimality :stop 100 :null-max 0.3 :debug-view nil :gain1 0.005 :gain2 0.005 :rest-torque-ik-args (list :contact-wrench-optimize? t) :dataset (progn (if (not (and (boundp 'both) both)) (load "random_contact_pose.both.rsd")) both)))
+   (loop-test-random-contact-pose :test-mode :optimality :stop 50 :null-max 0.1 :debug-view :no-message :gain1 0.0005 :gain2 0.0005 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre '(10 10 10 10) :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) 1)) :dataset true))
   (send-all (flatten (cdr *test-random-contact-rsd*)) :clear)
   (dump-loadable-structure (format nil "log.test-random-contact-optimal.rsd")
                            *test-random-contact-rsd*)
-  (dump-t1-t2-f1-f2))
+  (dump-t1-t2-f1-f2)
+  (unix::system "tail t1_t2_f1_f2.log")
+  )
  ((substringp "true" (unix::getenv "TORQUE_GRAD_SOLVABLE_TEST"))
   (print "TORQUE_GRAD_SOLVABLE_TEST")
+  (if (not (and (boundp 'both2) both2))
+      (load "random_contact_pose.rsd.cygnus.04112015/random_contact_pose.both2.rsd"))
   ;; (send-all (send *robot* :joint-list) :max-joint-torque 1000)
   ;;
   (setq
    *test-random-contact-rsd*
-   (loop-test-random-contact-pose :test-mode :solvability :stop 100 :null-max 0.3 :debug-view nil :gain1 0.005 :gain2 0.005 :rest-torque-ik-args (list :contact-wrench-optimize? t) :dataset (progn (if (not (and (boundp 'both) both)) (load "random_contact_pose.both.rsd")) both)))
+   (loop-test-random-contact-pose :test-mode :solvability :stop 50 :null-max 0.1 :debug-view :no-message :gain1 0.0005 :gain2 0.0005 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre '(10 10 10 10) :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) 1)) :dataset both2))
   ;;
   (let* ((len (length (cdr *test-random-contact-rsd*)))
 	 (p1 (count-if #'(lambda (rsdl)
