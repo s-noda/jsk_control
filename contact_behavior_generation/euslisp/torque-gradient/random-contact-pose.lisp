@@ -86,6 +86,7 @@
     (mapcar
      '(lambda (k) (send (send *robot* k :end-coords) :copy-worldcoords))
      key-list))
+   &allow-other-keys
    )
   (while
       (send *robot* :fullbody-inverse-kinematics
@@ -130,7 +131,7 @@
    &allow-other-keys)
   (apply 'random-contact-pose args)
   (dotimes (i stop)
-    (setq buf (random-torso-move))
+    (setq buf (apply 'random-torso-move args))
     (cond
      ((and (functionp skip-func)
            (funcall skip-func *now-rsd*))
@@ -280,7 +281,11 @@
       target-coords))
 
 (defun gen-database-random-contact-pose
-  nil
+  (&rest
+   args
+   &key
+   (tag "")
+   &allow-other-keys)
   (setq both nil
         both2 nil
 	true nil
@@ -288,31 +293,33 @@
   (let* ((len 100) buf)
     (while (< (length both) len)
       (warning-message 2 "[both] ~A/~A~%" (length both) len)
-      (setq buf (gen-solvable-random-contact-pose :solvable? :both))
+      (setq buf (apply 'gen-solvable-random-contact-pose :solvable? :both args))
       (if buf (push buf both)))
     (while (< (length both2) len)
       (warning-message 2 "[both2] ~A/~A~%" (length both2) len)
-      (setq buf (gen-solvable-random-contact-pose
+      (setq buf (apply
+		 'gen-solvable-random-contact-pose
                  :solvable? :both
                  :skip-func '(lambda (rsd)
                                (>
                                 (apply 'max (mapcar 'abs (apply 'concatenate (cons cons (send rsd :f/fmax)))))
-                                1.01))))
+                                1.01))
+		 args))
       (if buf (push buf both2)))
     (while (< (length true) len)
       (warning-message 2 "[true] ~A/~A~%" (length both) len)
-      (setq buf (gen-solvable-random-contact-pose :solvable? t))
+      (setq buf (apply 'gen-solvable-random-contact-pose :solvable? t args))
       (if buf (push buf true)))
     (while (< (length false) len)
       (warning-message 2 "[false] ~A/~A~%" (length both) len)
-      (setq buf (gen-solvable-random-contact-pose :solvable? nil))
+      (setq buf (apply 'gen-solvable-random-contact-pose :solvable? nil args))
       (if buf (push buf false)))
     (list both true false))
   (send-all (flatten (list both true false)) :clear)
-  (dump-loadable-structure "random_contact_pose.both.rsd" both)
-  (dump-loadable-structure "random_contact_pose.both2.rsd" both2)
-  (dump-loadable-structure "random_contact_pose.true.rsd" true)
-  (dump-loadable-structure "random_contact_pose.false.rsd" false)
+  (dump-loadable-structure (format nil "random_contact_pose.both.rsd~A" tag) both)
+  (dump-loadable-structure (format nil "random_contact_pose.both2.rsd~A" tag) both2)
+  (dump-loadable-structure (format nil "random_contact_pose.true.rsd~A" tag) true)
+  (dump-loadable-structure (format nil "random_contact_pose.false.rsd~A" tag) false)
   )
 
 (defun test-random-contact-pose
