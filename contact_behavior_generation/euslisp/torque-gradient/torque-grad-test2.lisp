@@ -281,10 +281,11 @@
  ((substringp "true" (unix::getenv "TORQUE_GRAD_OPTIMAL_TEST"))
   (print "TORQUE_GRAD_OPTIMAL_TEST")
   (if (not (and (boundp 'true) true))
-      (load "random_contact_pose.rsd.cygnus.04112015/random_contact_pose.true.rsd"))
+      (setq true (car (rsd-deserialize :file "random_contact_pose.both.rsd"))))
+      ;;(load "random_contact_pose.rsd.cygnus.04112015/random_contact_pose.true.rsd"))
   (setq
    *test-random-contact-rsd*
-   (loop-test-random-contact-pose :test-mode :optimality :stop 50 :null-max 0.1 :debug-view :no-message :gain1 0.0005 :gain2 0.0005 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre '(10 10 10 10) :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) 1)) :dataset true))
+   (loop-test-random-contact-pose :test-mode :optimality :stop 50 :null-max 0.1 :debug-view :no-message :gain1 0.001 :gain2 500.0 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre '(10 10 10 10) :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) 0.5)) :dataset true))
   (send-all (flatten (cdr *test-random-contact-rsd*)) :clear)
   (dump-loadable-structure (format nil "log.test-random-contact-optimal.rsd")
                            *test-random-contact-rsd*)
@@ -294,12 +295,13 @@
  ((substringp "true" (unix::getenv "TORQUE_GRAD_SOLVABLE_TEST"))
   (print "TORQUE_GRAD_SOLVABLE_TEST")
   (if (not (and (boundp 'both2) both2))
-      (load "random_contact_pose.rsd.cygnus.04112015/random_contact_pose.both2.rsd"))
+      (setq both2 (car (rsd-deserialize :file "random_contact_pose.both.rsd"))))
+  ;; (load "random_contact_pose.rsd.cygnus.04112015/random_contact_pose.both2.rsd"))
   ;; (send-all (send *robot* :joint-list) :max-joint-torque 1000)
   ;;
   (setq
    *test-random-contact-rsd*
-   (loop-test-random-contact-pose :test-mode :solvability :stop 50 :null-max 0.1 :debug-view :no-message :gain1 0.0005 :gain2 0.0005 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre '(10 10 10 10) :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) 1)) :dataset both2))
+   (loop-test-random-contact-pose :test-mode :solvability :stop 50 :null-max 0.1 :debug-view :no-message :gain1 0.001 :gain2 500.0 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre '(10 10 10 10) :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) 0.5)) :dataset both2))
   ;;
   (let* ((len (length (cdr *test-random-contact-rsd*)))
 	 (p1 (count-if #'(lambda (rsdl)
