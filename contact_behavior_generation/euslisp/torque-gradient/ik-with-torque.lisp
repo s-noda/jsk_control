@@ -132,7 +132,7 @@
   (if contact-wrench-optimize?
       (if (not (send *now-rsd* :full-constrainted))
 	  (progn ;; (setq *ik-convergence-user-check* 0.0)
-		 (print 'not-full-constrainted-rsd)))
+	    (print 'not-full-constrainted-rsd)))
     (send *now-rsd* :buf :contact-wrench-optimize-skip t))
   ;; (setq *rsd-queue*
   ;; (subseq (cons *now-rsd* *rsd-queue*) 0 100))
@@ -279,6 +279,18 @@
       (setq move (transform (transpose Jtau) tau))
       )
      ((eq mode :force-approximation)
+      (setq move tau)
+      ;; (setq
+      ;;  Jtau
+      ;;  (calc-torque-gradient-with-force-approximation
+      ;; 	:move-target move-target
+      ;; 	:all-link-list (remove root-link ul)
+      ;; 	:6dof? 6dof?
+      ;; 	:as-list t
+      ;; 	:debug? debug?))
+      ;; (mapcar
+      ;;  #'(lambda (m) (setq move (transform (transpose m) move)))
+      ;;  Jtau)
       (setq
        Jtau
        (calc-torque-gradient-with-force-approximation
@@ -286,11 +298,10 @@
 	:all-link-list (remove root-link ul)
 	:6dof? 6dof?
 	:as-list t
+	:inverse? nil
 	:debug? debug?))
-      ;;(setq move (transform (transpose Jtau) tau))
-      (setq move tau)
       (mapcar
-       #'(lambda (m) (setq move (transform (transpose m) move)))
+       #'(lambda (m) (setq move (transform m move)))
        Jtau)
       (if (and (boundp '*rotational-6dof-fix-leg*) *rotational-6dof-fix-leg*)
 	  (setq move (scale -1 move)))
