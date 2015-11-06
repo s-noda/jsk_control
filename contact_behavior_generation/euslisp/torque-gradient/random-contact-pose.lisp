@@ -49,14 +49,19 @@
    &allow-other-keys
    )
   ;;
+  (reset-pose)
   (mapcar
    '(lambda (j) (send j :joint-angle
 		      (+ (* (random 1.0)
 			    (- (send j :max-angle) (send j :min-angle)))
 			 (send j :min-angle))))
-   (send *robot* :joint-list))
+   (set-difference (send *robot* :joint-list)
+		   (send-all
+		    (send *robot* :link-list (send *robot* :link "BODY"))
+		    :joint)
+		   ))
   (send *robot* :newcoords
-	(make-coords :rpy (scale (deg2rad 30) (random-vector))))
+	(make-coords :rpy (scale (deg2rad 180) (random-vector))))
   (send-all (send *robot* :links) :worldcoords)
   (cond
    ((not (and (boundp '*viewer*) *viewer*))
@@ -345,7 +350,7 @@
   (rsd-serialize :file (format nil "random_contact_pose.false.rsd~A" tag)
 		 :rsd-list false)
   )
-;; (dolist (rsdl both) (dolist (rsd rsdl) (send rsd :draw :friction-cone? nil :torque-draw? nil) (setq a (optimize-brli)) (send a :draw :torque-draw? nil) (print (send a :full-constrainted)) (read-line)))
+;; (let* ((error 0)) (dolist (rsdl both) (dolist (rsd rsdl) (send rsd :draw :friction-cone? nil :torque-draw? nil) (setq a (optimize-brli)) (send a :draw :torque-draw? nil :friction-cone? nil) (send *viewer* :draw-objects) (format t "~A = ~A ? ~A~%" (send a :full-constrainted) (send rsd :full-constrainted) (setq ok? (eq (send a :full-constrainted) (send rsd :full-constrainted)))) (if (not ok?) (incf error)))) (print error))
 
 (defun test-random-contact-pose
   (&rest
