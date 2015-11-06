@@ -5,10 +5,21 @@
 (require "rotational-6dof.lisp")
 
 (defvar *robot-hand* (send *robot* :links))
+;; (mapcar
+;;  '(lambda (j)
+;;     (send j :max-joint-torque (* 0.5 (send j :max-joint-torque))))
+;;  (send *robot* :joint-list))
 
 (defun my-collision-check-list
   nil
-  (let* ((ll (send *robot* :links) l1)
+  (let* ((ll (set-difference
+	      (send *robot* :links)
+	      (send-all
+	       (flatten (send-all
+			 (send *robot* :link-list (send *robot* :link "BODY"))
+			 :joint))
+	       :parent-link)))
+	 l1
 	 ret)
     (while ll
       (setq l1 (car ll))
@@ -25,6 +36,7 @@
 
 (defun my-collision-check
   nil
+  (send-all (send *robot* :links) :worldcoords)
   (mapcar
    #'(lambda (ll)
        (if (plusp (apply 'pqp-collision-check ll))
@@ -51,10 +63,9 @@
     (objects (flatten (list *robot-hand*)))
     (send *irtviewer* :change-background (float-vector 1 1 1))))
   (send *viewer* :draw-objects)
-  (if (not
-       ;;(send *robot* :self-collision-check))
-       (flatten (my-collision-check)))
-      (copy-seq (send *robot* :angle-vector)))
+  (if (flatten (my-collision-check))
+      (progn (warning-message 2 "collide!!~%") nil)
+    (copy-seq (send *robot* :angle-vector)))
   )
 
 (defun random-torso-move
@@ -78,7 +89,7 @@
 	  :contact-wrench-optimize? t
 	  :rotation-axis rotation-axis))
    rest-torque-ik-args
-   (move-max-max 1000)
+   (move-max-max 5000)
    (move-step 100)
    (move-max move-max-max) ;;(random move-max-max))
    (move-dir (random-vector))
@@ -105,7 +116,7 @@
 	     (cons :torso key-list))
 	    :rotational-axis (cons nil rotation-axis)
 	    :stop 30 :warnp nil
-	    :thre (cons (/ move-step 2) thre)
+	    :thre (cons (* move-step 0.9) thre)
 	    :target-centroid-pos nil)
     (if (flatten (my-collision-check)) (return-from nil nil))
     (setq move-max (- move-max move-step))
@@ -129,16 +140,21 @@
    (ret nil) buf flag
    (skip-func)
    &allow-other-keys)
+  (format t "[gen-solvalbe-random-contact-pose]~%")
   (apply 'random-contact-pose args)
   (dotimes (i stop)
-    (setq buf (apply 'random-torso-move args))
+    ;;(setq buf (apply 'random-torso-move args))
+    (setq buf (random-torso-move))
+    (format t " mode: ~A~%" solvable?)
     (cond
      ((and (functionp skip-func)
            (funcall skip-func *now-rsd*))
+      (format t " skip~%")
       'skip)
      ((eq solvable? :both)
       (push *now-rsd* ret)
-      (if buf (setq solvable? nil) (setq solvable? t))
+      ;; (if buf (setq solvable? nil) (setq solvable? t))
+      (setq solvable? (not buf))
       )
      ((eq solvable? buf)
       (push *now-rsd* ret)
@@ -287,7 +303,7 @@
    (tag "")
    &allow-other-keys)
   (setq both nil
-        both2 nil
+        ;; both2 nil
 	true nil
 	false nil)
   (let* ((len 100) buf)
@@ -295,17 +311,17 @@
       (warning-message 2 "[both] ~A/~A~%" (length both) len)
       (setq buf (apply 'gen-solvable-random-contact-pose :solvable? :both args))
       (if buf (push buf both)))
-    (while (< (length both2) len)
-      (warning-message 2 "[both2] ~A/~A~%" (length both2) len)
-      (setq buf (apply
-		 'gen-solvable-random-contact-pose
-                 :solvable? :both
-                 :skip-func '(lambda (rsd)
-                               (>
-                                (apply 'max (mapcar 'abs (apply 'concatenate (cons cons (send rsd :f/fmax)))))
-                                1.01))
-		 args))
-      (if buf (push buf both2)))
+    ;; (while (< (length both2) len)
+    ;;   (warning-message 2 "[both2] ~A/~A~%" (length both2) len)
+    ;;   (setq buf (apply
+    ;; 		 'gen-solvable-random-contact-pose
+    ;;              :solvable? :both
+    ;;              :skip-func '(lambda (rsd)
+    ;;                            (>
+    ;;                             (apply 'max (mapcar 'abs (apply 'concatenate (cons cons (send rsd :f/fmax)))))
+    ;;                             1.01))
+    ;; 		 args))
+    ;;   (if buf (push buf both2)))
     (while (< (length true) len)
       (warning-message 2 "[true] ~A/~A~%" (length both) len)
       (setq buf (apply 'gen-solvable-random-contact-pose :solvable? t args))
@@ -316,14 +332,14 @@
       (if buf (push buf false)))
     (list both true false))
   (send-all (flatten (list both true false)) :clear)
-  ;; (dump-loadable-structure (format nil "random_contact_pose.both.rsd~A" tag) both)
-  ;; (dump-loadable-structure (format nil "random_contact_pose.both2.rsd~A" tag) both2)
-  ;; (dump-loadable-structure (format nil "random_contact_pose.true.rsd~A" tag) true)
-  ;; (dump-loadable-structure (format nil "random_contact_pose.false.rsd~A" tag) false)
+  (dump-loadable-structure (format nil "random_contact_pose.both.l~A" tag) both)
+  ;; (dump-loadable-structure (format nil "random_contact_pose.both2.l~A" tag) both2)
+  (dump-loadable-structure (format nil "random_contact_pose.true.l~A" tag) true)
+  (dump-loadable-structure (format nil "random_contact_pose.false.l~A" tag) false)
   (rsd-serialize :file (format nil "random_contact_pose.both.rsd~A" tag)
 		 :rsd-list both)
-  (rsd-serialize :file (format nil "random_contact_pose.both2.rsd~A" tag)
-		 :rsd-list both2)
+  ;; (rsd-serialize :file (format nil "random_contact_pose.both2.rsd~A" tag)
+  ;; :rsd-list both2)
   (rsd-serialize :file (format nil "random_contact_pose.true.rsd~A" tag)
 		 :rsd-list true)
   (rsd-serialize :file (format nil "random_contact_pose.false.rsd~A" tag)
