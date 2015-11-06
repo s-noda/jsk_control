@@ -310,5 +310,6 @@ roseus human-ball-test.lisp
 (send-all (send *robot* :joint-list) :local-axis-vector)
 (reset-pose)
 (test-torque-ik :init nil :gain nil :null-max 2.0)
+(reset-pose)
 (test-torque-ik :init nil :gain nil :null-max 0.1 :mode :force-approximation)
 
