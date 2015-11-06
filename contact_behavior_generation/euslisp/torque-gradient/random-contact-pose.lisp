@@ -329,6 +329,7 @@
   (rsd-serialize :file (format nil "random_contact_pose.false.rsd~A" tag)
 		 :rsd-list false)
   )
+;; (dolist (rsdl both) (dolist (rsd rsdl) (send rsd :draw :friction-cone? nil :torque-draw? nil) (setq a (optimize-brli)) (send a :draw :torque-draw? nil) (print (send a :full-constrainted)) (read-line)))
 
 (defun test-random-contact-pose
   (&rest
