@@ -1386,11 +1386,17 @@
      (mapcar #'(lambda (j) (transpose j)) jacobian-list)
      '(0 1)))
    (as-list nil)
+   (inverse? t)
    (ret
-    (list Jf
-	  (pseudo-inverse-loop G)
-	  ;;(transpose G)
-	  mgx cog-jacobian))
+    (if inverse?
+	(list Jf
+	      (pseudo-inverse-loop G)
+	      ;;(transpose G)
+	      mgx cog-jacobian)
+      (list (pseudo-inverse-loop Jf)
+	    G
+	    (pseudo-inverse-loop mgx)
+	    (transpose cog-jacobian))))
    &allow-other-keys
    )
   (if as-list ret (reduce #'m* ret))
