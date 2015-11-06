@@ -107,7 +107,7 @@
   (send-all (send robot :links) :worldcoords)
   ;;
   (send robot :set-val 'links
-	(append rlinks (send robot :links)))
+	(append (butlast rlinks) (send robot :links)))
   (send robot :set-val 'joint-list
 	(flatten (send-all (send robot :links) :joint)))
   (send robot :assoc (car (send robot :links)))
