@@ -303,8 +303,8 @@
       (mapcar
        #'(lambda (m) (setq move (transform m move)))
        Jtau)
-      (if (and (boundp '*rotational-6dof-fix-leg*) *rotational-6dof-fix-leg*)
-	  (setq move (scale -1 move)))
+      ;; (if (and (boundp '*rotational-6dof-fix-leg*) *rotational-6dof-fix-leg*)
+      ;; (setq move (scale -1 move)))
       )
      ((eq mode :old-force-approximation)
       (map cons
