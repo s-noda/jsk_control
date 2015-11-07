@@ -289,6 +289,8 @@
    (callback nil)
    (gain1) (gain2)
    (rest-torque-ik-args)
+   (rest-torque-gradient-ik-args)
+   (rest-pseudo-gradient-ik-args)
    (stop 100) (null-max 0.3)
    human-ball-pose-args
    torque-ik-args
@@ -332,6 +334,7 @@
       'test-torque-ik
       (append
        rest-torque-ik-args
+       rest-torque-gradient-ik-args
        torque-ik-args
        (list :mode :normal :gain gain1))))
     (if (not torque)
@@ -348,6 +351,7 @@
       'test-torque-ik
       (append
        rest-torque-ik-args
+       rest-pseudo-gradient-ik-args
        torque-ik-args
        (list
 	:mode :force-approximation
