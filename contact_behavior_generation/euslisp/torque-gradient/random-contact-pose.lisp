@@ -366,6 +366,8 @@
    (callback nil)
    (gain1) (gain2)
    (rest-torque-ik-args)
+   (rest-torque-gradient-ik-args)
+   (rest-pseudo-gradient-ik-args)
    (stop 100) (null-max 0.3)
    torque-ik-args
    ;;
@@ -423,6 +425,7 @@
       'test-torque-ik
       (append
        rest-torque-ik-args
+       rest-torque-gradient-ik-args
        torque-ik-args
        (list :mode :normal :gain gain1))))
     (if (and (eq test-mode :optimality) (not torque))
@@ -439,6 +442,7 @@
       'test-torque-ik
       (append
        rest-torque-ik-args
+       rest-pseudo-gradient-ik-args
        torque-ik-args
        (list
 	:mode :force-approximation
