@@ -1393,7 +1393,7 @@
 	      (pseudo-inverse-loop G)
 	      ;;(transpose G)
 	      mgx cog-jacobian)
-      (list (pseudo-inverse-loop Jf)
+      (list (if Jf (pseudo-inverse-loop Jf))
 	    G
 	    (pseudo-inverse-loop mgx)
 	    (transpose cog-jacobian))))
