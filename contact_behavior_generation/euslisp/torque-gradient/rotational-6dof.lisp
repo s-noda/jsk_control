@@ -74,6 +74,7 @@
 	   )
       (send rlink :assoc vlink)
       (send j :put :ref-joint j0)
+      (send j :max-joint-torque 1e+10)
       (send j :set-val 'default-coords
 	    (send jc0 :transformation jc))
       (if (eq (car ref-joint) j0)
@@ -308,8 +309,14 @@ roseus human-ball-test.lisp
 (load "rotational-6dof.lisp")
 (send-all (send *robot* :joint-list) :put :local-axis-vector nil)
 (send-all (send *robot* :joint-list) :local-axis-vector)
+
+
+;; non divergented parameters for standing posture optimization
 (reset-pose)
-(test-torque-ik :init nil :gain nil :null-max 2.0)
+(test-torque-ik :init nil :gain 0.05 :null-max 0.5
+                :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -0.002))
+;; (test-torque-ik :init nil :gain nil :null-max 1.0)
 (reset-pose)
-(test-torque-ik :init nil :gain nil :null-max 0.1 :mode :force-approximation)
+(test-torque-ik :init nil :gain 750.0 :null-max 0.5 :mode :force-approximation
+                :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -1.0))
 
