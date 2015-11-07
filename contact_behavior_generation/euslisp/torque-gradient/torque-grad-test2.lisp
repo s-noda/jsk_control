@@ -61,20 +61,44 @@
   (rsd &optional (str nil) (friction-cone? nil))
   (cond
    ((or (find *robot* (send *irtviewer* :objects))
-	(not (find *random-contact* (send *irtviewer* :objects))))
-    (objects (flatten (list *robot-hand* *random-contact*)))
+	;; (not (find *random-contact* (send *irtviewer* :objects)))
+        nil
+        )
+    ;; (objects (flatten (list *robot-hand*)))
+    (send *irtviewer* :objects (flatten (list *robot-hand*)))
     (send *irtviewer* :change-background (float-vector 1 1 1))))
   ;;(send rsd :draw :friction-cone? nil :torque-draw? nil)
+  ;; ;; copyed object fix
+  ;; (send rsd :draw :friction-cone? nil :torque-draw? nil)
+  (dolist (cs (send rsd :contact-states))
+    (send cs :set-val 'contact-coords
+          (send *robot* (send cs :name) :end-coords)))
+  (send-all (send *robot* :links) :worldcoords)
+  ;;   (let* ((pl (send (send cs :contact-coords) :parent))
+  ;;          (pl2 (send *robot* :link (send pl :name))))
+  ;;     (cond
+  ;;      ((not pl2)
+  ;;       (warning-message 1 "unknow link is parrent of contact state~%")
+  ;;       (send pl :dissoc (send cs :contact-coords))
+  ;;       )
+  ;;      ((not (and pl2 (eq pl pl2)))
+  ;;       (warning-message 1 "copyed link detected~%")
+  ;;       (send pl :dissoc (send cs :contact-coords))
+  ;;       ;; (send pl2 :assoc (send cs :contact-coords))
+  ;;       ))
+  ;;     (cond
+  ;;      ((or (> (norm (send (send cs :contact-coords) :difference-position
+  ;;                          (send cs :target-coords)))
+  ;;              100)
+  ;;           (> (norm (send (send cs :contact-coords) :difference-rotation
+  ;;                          (send cs :target-coords)))
+  ;;              (deg2rad 5)))
+  ;;       (warning-message 1 "contact-coords has too large error~%")
+  ;;       (send (send cs :contact-coords) :newcoords
+  ;;             (send (send cs :target-coords) :copy-worldcoords))))
+  ;;     ))
+  ;;
   (send rsd :draw :friction-cone? friction-cone? :torque-draw? nil)
-  (if friction-cone?
-      (progn
-	(send *irtviewer* :objects
-	      (flatten
-	       (list
-		(remove *robot*
-			(remove *random-contact*
-				(send *irtviewer* :objects)))
-		*robot-hand* *random-contact*)))))
   (send *viewer* :draw-objects :flush nil)
   (let* ((y (- (send *viewer* :viewsurface :height) 10)))
     (mapcar
@@ -354,10 +378,79 @@
  :prefix "pseudo_plus_torque")
 (show-sorted-rsd
  :func '(lambda (f1 f2)
-	  (< (if (or (> (nth 3 f1) 0.7) (> (nth 2 f1) 0.7))
+	  (< (if (or (> (nth 3 f1) 0.8) (> (nth 2 f1) 0.8))
 		 100
 	       (expt (- (nth 3 f1) (nth 2 f1)) 2))
-	     (if (or (> (nth 3 f2) 0.7) (> (nth 2 f2) 0.7))
+	     (if (or (> (nth 3 f2) 0.8) (> (nth 2 f2) 0.8))
 		 100
 	       (expt (- (nth 3 f2) (nth 2 f2)) 2))))
  :prefix "pseudo_eq_torque")
+
+(bench2 (setq both2 (car (rsd-deserialize :file "random_contact_pose.both.rsd"))))
+(setq both (mapcar '(lambda (rsdl1 rsdl2)
+                      (append rsdl1
+                              (list (find-if '(lambda (rsd) (send rsd :full-constrainted)) rsdl2))))
+                   (cdr *test-random-contact-rsd*) both2))
+
+(setq both-ok (remove-if-not '(lambda (rsdl) (and (send (nth 1 rsdl) :full-constrainted)
+                                                  (send (nth 2 rsdl) :full-constrainted)))
+                             both)
+      torque-ok (remove-if-not '(lambda (rsdl) (and (send (nth 1 rsdl) :full-constrainted)
+                                                    (not (send (nth 2 rsdl) :full-constrainted))))
+                               both)
+      pseudo-ok (remove-if-not '(lambda (rsdl) (and (not (send (nth 1 rsdl) :full-constrainted))
+                                                    (send (nth 2 rsdl) :full-constrainted)))
+                               both)
+      both-ng (remove-if-not '(lambda (rsdl) (and (not (send (nth 1 rsdl) :full-constrainted))
+                                                  (not (send (nth 2 rsdl) :full-constrainted))))
+                             both))
+
+(mapcar
+ '(lambda (str path rsd)
+    (show-random-contact-pose rsd str t)
+    (send *viewer* :viewsurface :write-to-image-file path)
+    (read-line))
+ (list
+  (list "Initial Posture" " not feasible")
+  (list "Torque gradient" " feasible")
+  (list "pseudo gradient" " feasible"))
+ (list "both_ok_init.jpg" "both_ok_torque.jpg" "both_ok_pseudo.jpg")
+ (nth 12 both-ok))
+
+(mapcar
+ '(lambda (str path rsd)
+    (show-random-contact-pose rsd str t)
+    (send *viewer* :viewsurface :write-to-image-file path)
+    (read-line))
+ (list
+  (list "Initial Posture" " not feasible")
+  (list "Torque gradient" " feasible")
+  (list "pseudo gradient" " not feasible"))
+ (list "torque_ok_init.jpg" "torque_ok_torque.jpg" "torque_ok_pseudo.jpg")
+ (nth 6 torque-ok))
+
+(mapcar
+ '(lambda (str path rsd)
+    (show-random-contact-pose rsd str t)
+    (send *viewer* :viewsurface :write-to-image-file path)
+    (read-line))
+ (list
+  (list "Initial Posture" " not feasible")
+  (list "Torque gradient" " not feasible")
+  (list "pseudo gradient" " feasible"))
+ (list "pseudo_ok_init.jpg" "pseudo_ok_torque.jpg" "pseudo_ok_pseudo.jpg")
+ (nth 8 pseudo-ok))
+
+(mapcar
+ '(lambda (str path rsd)
+    (show-random-contact-pose rsd str t)
+    (send *viewer* :viewsurface :write-to-image-file path)
+    (read-line))
+ (list
+  (list "Initial Posture" " not feasible")
+  (list "Torque gradient" " not feasible")
+  (list "pseudo gradient" " not feasible")
+  (list "Random sampled" " feasible")
+  )
+ (list "both_ng_init.jpg" "both_ng_torque.jpg" "both_ng_pseudo.jpg" "both_ng_random.jpg")
+ (nth 8 both-ng))
