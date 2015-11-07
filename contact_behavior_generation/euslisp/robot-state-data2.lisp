@@ -117,7 +117,7 @@
     ((:brli-gain bg) 1)
     ((:brli br)
      (mapcar #'(lambda (fb tb) (v- fb (scale bg tb))) fb tb))
-    ((:gbrli-list gbrl)
+    ((:gbrli-list gbrl);; (send self :calc-gbrli br))
      (mapcar
       #'(lambda (grasp br) (transform grasp br))
       (mapcar
@@ -209,6 +209,14 @@
 	       (list key (cadr (member key args))))
 	      (t (list key sym)))))
        (mapcar #'car (send self :slots)))))))
+  (:calc-gbrli
+   (&optional (br brli))
+   (mapcar
+    #'(lambda (grasp br) (transform grasp br))
+    (mapcar
+     #'(lambda (v) (send robot :calc-grasp-matrix (list (v- v contact-zero))))
+     (send-all contact-states :contact-coords))
+    br))
   (:get-link-list
    (&key (robot *robot*))
    (mapcar
@@ -352,6 +360,7 @@
      (send-all (send self :contact-states) :contact-n)))
   (:gbrli-dec-move
    (&key
+    (gbrli-list gbrli-list)
     (mg (* 1e-3 (send *robot* :weight) (* 1e-3 (aref *g-vec* 2)))) ;;9.8))
     (g-1 (make-matrix
 	  3 6
