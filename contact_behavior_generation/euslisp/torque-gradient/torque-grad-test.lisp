@@ -286,7 +286,18 @@
   (print "TORQUE_GRAD_OPTIMAL_TEST")
   (setq
    *test-human-ball-rsd*
-   (test-sphere-human-ball-loop :loop-max 100 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(t t t t) :stop 100 :null-max 0.3 :debug-view nil :gain1 0.03 :gain2 0.03 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre (make-list 4 :initial-element 30) :rthre (make-list 4 :initial-element (deg2rad 10))) :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose) (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -850)))))))
+   ;; (test-sphere-human-ball-loop :loop-max 100 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(t t t t) :stop 100 :null-max 0.3 :debug-view nil :gain1 0.03 :gain2 0.03 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre (make-list 4 :initial-element 30) :rthre (make-list 4 :initial-element (deg2rad 10))) :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose) (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -850)))))))
+   (test-sphere-human-ball-loop
+    :loop-max 100 :key-list '(:rleg :lleg :rarm :larm)
+    :rotation-axis '(t t t t) :stop 100 :null-max 0.3
+    :debug-view :no-message :gain1 0.05 :gain2 750
+    :rest-torque-ik-args (list :contact-wrench-optimize? t
+                               :thre (make-list 4 :initial-element 30)
+                               :rthre (make-list 4 :initial-element (deg2rad 10)))
+    :rest-torque-gradient-ik-args (list :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -0.002))
+    :rest-pseudo-gradient-ik-args (list :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -1.0))
+    :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose)
+                                                              (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -850)))))))
   (send-all (flatten (cdr *test-human-ball-rsd*)) :clear)
   (dump-loadable-structure (format nil "log.test-human-ball-optimal.rsd.~A" "tttt.3010.100.850")
                            *test-human-ball-rsd*))
@@ -296,7 +307,7 @@
   ;;
   (setq
    *test-human-ball-rsd*
-   (test-sphere-human-ball-loop :test-mode :solvable :loop-max 100 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(t t t t) :stop 100 :null-max 0.3 :debug-view nil :gain1 0.03 :gain2 0.03 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre (make-list 4 :initial-element 30) :rthre (make-list 4 :initial-element (deg2rad 10))) :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose) (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -850)))))))
+   (test-sphere-human-ball-loop :test-mode :solvable :loop-max 100 :key-list '(:rleg :lleg :rarm :larm) :rotation-axis '(t t t t) :stop 100 :null-max 0.3 :debug-view nil :gain1 0.002 :gain2 700 :rest-torque-ik-args (list :contact-wrench-optimize? t :thre (make-list 4 :initial-element 30) :rthre (make-list 4 :initial-element (deg2rad 10))) :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose) (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -850)))))))
   ;;
   (let* ((len (length (cdr *test-human-ball-rsd*)))
 	 (p1 (count-if #'(lambda (rsdl)
