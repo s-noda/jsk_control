@@ -189,6 +189,7 @@
    (xtol 0.001)
    (ftol 0.001)
    (gtol 0.001)
+   (dtau/df (if (eq mode :normal) 1000.0 0.001))
    ;;
    (update-joint-angle? nil)
    &allow-other-keys)
@@ -224,7 +225,9 @@
 	   :wrench wrench-list
 	   :6dof? 6dof?
 	   :debug? debug?))
-	 Jtau move g)
+	 ;;
+	 Jf df
+	 Jtau dtau move g)
     ;; (print tau)
     (if torque-normalize?
 	(let* ((id 0))
@@ -277,6 +280,17 @@
 	:6dof? 6dof?
 	:debug? debug?))
       (setq move (transform (transpose Jtau) tau))
+      ;;
+      ;; force gradient
+      (setq Jf
+	    (calc-torque-gradient-with-force-approximation
+	     :Jf nil
+	     :move-target move-target
+	     :all-link-list (remove root-link ul)
+	     :6dof? 6dof?
+	     :as-list t
+	     :inverse? nil
+	     :debug? debug?))
       )
      ((eq mode :force-approximation)
       (setq move tau)
@@ -303,6 +317,7 @@
       (mapcar
        #'(lambda (m) (setq move (transform m move)))
        Jtau)
+      (setq Jf Jtau)
       ;; (if (and (boundp '*rotational-6dof-fix-leg*) *rotational-6dof-fix-leg*)
       ;; (setq move (scale -1 move)))
       )
@@ -330,6 +345,24 @@
       (if target-centroid-pos (setq move (scale 0 move)))
       )
      )
+    ;; force gradient
+    (setq df (if *now-rsd*
+		 (apply
+		  'concatenate
+		  (cons float-vector
+			(mapcar
+			 '(lambda (k)
+			    (or (send *now-rsd* :friction-brli k)
+				(instantiate float-vector 6)))
+			 key-list)))
+	       (instantiate float-vector (* 6 (length key-list)))))
+    (if Jf (mapcar
+	    #'(lambda (m) (setq df (transform m df)))
+	    (cdr Jf)))
+    (setq df (scale dtau/df df df))
+    (setq dtau (copy-seq move))
+    (setq move (v- move df move))
+    ;;
     (setq move
 	  (child-reverse-filter
 	   move
@@ -393,12 +426,15 @@
 	  (tol-check (norm move) (norm tau) :gtol gtol))
     (if (numberp *ik-convergence-user-check*)
 	(setq move (scale *ik-convergence-user-check* move)))
-    (format t "[~A] tau=~A dx=~A dt/dx=~A time=~A/~A~%"
+    (format t "[~A] tau=~A dx=~A dt/dx=~A time=~A/~A df/dtau=~A/~A df.dt=~A~%"
 	    cnt
 	    (norm tau)
 	    (abs g)
 	    dt/dx
-	    (send gtm :stop) (send tm :stop))
+	    (send gtm :stop) (send tm :stop)
+	    (if df (norm df)) (if dtau (norm dtau))
+	    (v. df dtau)
+	    )
     (if update-joint-angle?
 	(map cons '(lambda (j mv) (send j :joint-angle mv :relative t)) (send-all (remove root-link ul) :joint) move))
     ;; throw exception
