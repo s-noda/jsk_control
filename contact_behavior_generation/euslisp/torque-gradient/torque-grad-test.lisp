@@ -294,13 +294,16 @@
     :rest-torque-ik-args (list :contact-wrench-optimize? t
                                :thre (make-list 4 :initial-element 30)
                                :rthre (make-list 4 :initial-element (deg2rad 10)))
-    :rest-torque-gradient-ik-args (list :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -0.002))
+    :rest-torque-gradient-ik-args (list :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -0.002)
+                                        :force-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -1.0)
+                                        )
     :rest-pseudo-gradient-ik-args (list :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -1.0))
     :human-ball-pose-args (list :human-ball-init-pose '(progn (reset-pose)
                                                               (send *robot* :newcoords (make-coords :pos (float-vector 0 0 -850)))))))
   (send-all (flatten (cdr *test-human-ball-rsd*)) :clear)
   (dump-loadable-structure (format nil "log.test-human-ball-optimal.rsd.~A" "tttt.3010.100.850")
                            *test-human-ball-rsd*))
+ ;;;; @deprecated
  ((substringp "true" (unix::getenv "TORQUE_GRAD_SOLVABLE_TEST"))
   (print "TORQUE_GRAD_SOLVABLE_TEST")
   ;; (send-all (send *robot* :joint-list) :max-joint-torque 1000)
