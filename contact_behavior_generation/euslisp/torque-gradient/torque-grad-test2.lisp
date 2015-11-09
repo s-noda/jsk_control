@@ -58,7 +58,7 @@
   ret)
 
 (defun show-random-contact-pose
-  (rsd &optional (str nil) (friction-cone? nil))
+  (rsd &optional (str nil) (friction-cone? t))
   (cond
    ((or (find *robot* (send *irtviewer* :objects))
 	;; (not (find *random-contact* (send *irtviewer* :objects)))
@@ -99,6 +99,15 @@
   ;;     ))
   ;;
   (send rsd :draw :friction-cone? friction-cone? :torque-draw? nil)
+  (if friction-cone?
+      (progn
+	(send *irtviewer* :objects
+	      (flatten
+	       (list
+		*robot-hand*
+		(remove *robot*
+			(send *irtviewer* :objects))
+		)))))
   (send *viewer* :draw-objects :flush nil)
   (let* ((y (- (send *viewer* :viewsurface :height) 10)))
     (mapcar
@@ -365,6 +374,7 @@
 
 #|
 
+(load "log.test-random-contact-optimal.rsd")
 (show-sorted-rsd :prefix "pseudo_lt_torque")
 (show-sorted-rsd
  :func '(lambda (f1 f2) (> (- (nth 3 f1) (nth 2 f1))
@@ -378,10 +388,10 @@
  :prefix "pseudo_plus_torque")
 (show-sorted-rsd
  :func '(lambda (f1 f2)
-	  (< (if (or (> (nth 3 f1) 0.8) (> (nth 2 f1) 0.8))
+	  (< (if (or (> (nth 3 f1) 0.9) (> (nth 2 f1) 0.9))
 		 100
 	       (expt (- (nth 3 f1) (nth 2 f1)) 2))
-	     (if (or (> (nth 3 f2) 0.8) (> (nth 2 f2) 0.8))
+	     (if (or (> (nth 3 f2) 0.9) (> (nth 2 f2) 0.9))
 		 100
 	       (expt (- (nth 3 f2) (nth 2 f2)) 2))))
  :prefix "pseudo_eq_torque")
