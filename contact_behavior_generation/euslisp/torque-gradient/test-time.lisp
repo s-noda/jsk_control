@@ -85,6 +85,7 @@
    average
    variance
    &allow-other-keys)
+  (apply 'calc-grad-time-trial-proc args)
   (dotimes (i loop-cnt)
     (push
      (apply 'calc-grad-time-trial-proc args)
@@ -165,3 +166,32 @@
   (setq *grad-time-trial-dat* buf)
   ;; nil
   )
+
+(defun dump-time-values
+  (&key
+   (data *grad-time-trial-dat*)
+   (nlist (union (flatten (mapcar '(lambda (d) (cdr (assoc :n d))) data)) nil))
+   (klist (union (flatten (mapcar '(lambda (d) (cdr (assoc :k d))) data)) nil))
+   (root-dir "log.test_time")
+   buf
+   )
+  (unix::system (format nil "mkdir -p ~A" root-dir))
+  (dolist (k klist)
+    (setq buf (remove-if #'(lambda (d) (not (eq k (cdr (assoc :k d))))) data))
+    (setq buf (sort buf #'(lambda (a b) (< (cdr (assoc :n a))
+					   (Cdr (assoc :n b))))))
+    (let* ((ptau (open (format nil "~A/TorqueGradient(k=~A)" root-dir k)
+		       :direction :output))
+	   (pf (open (format nil "~A/PseudoGradient(k=~A)" root-dir k)
+		     :direction :output)))
+      (dolist (d buf)
+	(format ptau "~A ~A~%" (cdr (assoc :n d)) (cadr (assoc :average d)))
+	(format pf "~A ~A~%" (cdr (assoc :n d)) (caddr (assoc :average d)))
+	)
+      (close ptau) (close pf))))
+
+(calc-grad-time-trial)
+(dump-time-values)
+(let* ((av (flatten (mapcar '(lambda (d) (cdr (assoc :average d)))
+			    *grad-time-trial-dat*))))
+  (format t "time in [~A ~A]~%" (apply 'min av) (apply 'max av)))
