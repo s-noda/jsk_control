@@ -2,6 +2,8 @@
 
 (require "random-contact-pose.lisp")
 
+(setq *root-dir* "log.test_time")
+
 (defun calc-grad-time-trial-proc
   (&key
    (move-target-keys '(:rarm :larm :rleg :lleg))
@@ -70,7 +72,7 @@
   (&rest
    args
    &key
-   (loop-cnt 3)
+   (loop-cnt 1000)
    ;;
    (move-target-keys '(:rarm :larm :rleg :lleg))
    (move-target
@@ -172,7 +174,7 @@
    (data *grad-time-trial-dat*)
    (nlist (union (flatten (mapcar '(lambda (d) (cdr (assoc :n d))) data)) nil))
    (klist (union (flatten (mapcar '(lambda (d) (cdr (assoc :k d))) data)) nil))
-   (root-dir "log.test_time")
+   (root-dir *root-dir*)
    buf
    )
   (unix::system (format nil "mkdir -p ~A" root-dir))
@@ -195,3 +197,6 @@
 (let* ((av (flatten (mapcar '(lambda (d) (cdr (assoc :average d)))
 			    *grad-time-trial-dat*))))
   (format t "time in [~A ~A]~%" (apply 'min av) (apply 'max av)))
+
+(unix::system
+ (format nil (format nil "cd ~A; ./graph.sh;" *root-dir*)))
