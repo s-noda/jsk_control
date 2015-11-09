@@ -134,8 +134,8 @@
 	  (progn ;; (setq *ik-convergence-user-check* 0.0)
 	    (print 'not-full-constrainted-rsd)))
     (send *now-rsd* :buf :contact-wrench-optimize-skip t))
-  ;; (setq *rsd-queue*
-  ;; (subseq (cons *now-rsd* *rsd-queue*) 0 100))
+  (setq *rsd-queue*
+	(subseq (cons *now-rsd* *rsd-queue*) 0 100))
   (setq buf
 	(mapcar
 	 #'cons
@@ -525,6 +525,7 @@
 	 args))
   (setq *best-rsd* best-rsd)
   (setq *now-rsd* now-rsd)
+  (setq *rsd-queue* nil)
   ;;(print args)
   (setq
    ret
