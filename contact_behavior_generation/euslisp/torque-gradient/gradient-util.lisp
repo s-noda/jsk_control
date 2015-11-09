@@ -67,9 +67,10 @@
 	  (meter? t)
 	  (xyzabc-symbol '(x y z a b c))
 	  rot pos)
-  (format debug? "[6dof-gradient-coords] ~A E ~A~%"
-	  delta-symbol-list
-	  xyzabc-symbol)
+  (if debug?
+      (format debug? "[6dof-gradient-coords] ~A E ~A~%"
+	      delta-symbol-list
+	      xyzabc-symbol))
   (cond
    ((null delta-symbol-list) coords)
    ((null
@@ -78,7 +79,7 @@
 	      delta-symbol-list)))
     (cond
      ((eq (length (union nil delta-symbol-list)) 1)
-      (format debug? "   eus-gradient~%")
+      (if debug? (format debug? "   eus-gradient~%"))
       (labels ((exp-gradient-itterator
 		(sl)
 		(cond
@@ -244,13 +245,13 @@
 		 (and (not (find j joint-list))
 		      (not (find root-link (flatten (list j))))))
 	     target-joint-list)
-    (format debug? "[fggw] zero gradient detected~%")
+    (if debug? (format debug? "[fggw] zero gradient detected~%"))
     (make-coords :rot (make-matrix 3 3)))
    ((find-if #'(lambda (j)
 		 (not (and (class j)
 			   (subclassp (class j) rotational-joint))))
 	     target-joint-list)
-    (format debug? "[fggw] non rotational-joint detected~%")
+    (if debug? (format debug? "[fggw] non rotational-joint detected~%"))
     ;;(format t "   ~A vs " (send move-target :worldrot))
     (apply #'general-gradient-worldcoords args))
    ((null
@@ -258,7 +259,7 @@
 	   (sort target-joint-list
 		 #'(lambda (j1 j2) (> (position j1 joint-list)
 				      (position j2 joint-list))))))
-    (format debug? "[fggw] joint /E joint-list~%")
+    (if debug? (format debug? "[fggw] joint /E joint-list~%"))
     (apply #'general-gradient-worldcoords args))
    (t
     (let* ((ax-list (send-all target-joint-list :axis-vector :world))
@@ -403,7 +404,7 @@
    ((and (listp target-joint)
 	 (class (car target-joint))
 	 (subclassp (class (car target-joint)) cascaded-coords))
-    (format debug? "[gradient-vector] 6dof link detected~%")
+    (if debug? (format debug? "[gradient-vector] 6dof link detected~%"))
     ret)
    (debug?
     (let ((ax  (if target-joint (send target-joint :axis-vector :world)))
@@ -530,7 +531,7 @@
    ((remove-if
      #'(lambda (j) (and j (class j) (subclassp (class j) rotational-joint)))
      (flatten target-joint-list))
-    (format debug? "[gradient^2-vector] linear joint detected~%")
+    (if debug? (format debug? "[gradient^2-vector] linear joint detected~%"))
     ret)
    ((and target-joint-list debug?)
     (let ((ax (send-all target-joint-list :axis-vector :world))
