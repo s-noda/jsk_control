@@ -322,7 +322,9 @@
     :test-mode :optimality :stop 100 :null-max 0.3 :debug-view nil
     :gain1 0.05 :gain2 750.0
     :rest-torque-ik-args (list :contact-wrench-optimize? t :thre '(10 10 10 10))
-    :rest-torque-gradient-ik-args (list :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -0.002))
+    :rest-torque-gradient-ik-args (list :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -0.002)
+                                        :force-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -1.0)
+                                        )
     :rest-pseudo-gradient-ik-args (list :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -1.0))
     ;; :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) 0.5))
     :dataset true))
@@ -345,7 +347,9 @@
     :test-mode :solvability :stop 100 :null-max 0.3 :debug-view nil
     :gain1 0.05 :gain2 750.0
     :rest-torque-ik-args (list :contact-wrench-optimize? t :thre '(10 10 10 10))
-    :rest-torque-gradient-ik-args (list :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -0.002))
+    :rest-torque-gradient-ik-args (list :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -0.002)
+                                        :force-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -1.0)
+                                        )
     :rest-pseudo-gradient-ik-args (list :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -1.0))
     ;; :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) 0.5))
     :dataset both2))

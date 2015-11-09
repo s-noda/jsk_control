@@ -321,14 +321,14 @@ roseus human-ball-test.lisp
 (reset-pose)
 (setq b (test-torque-ik :init nil :gain 750.0 :null-max 0.5 :mode :force-approximation :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -1.0)))
 
-;; rotate test
+;; rotate test, solvability
 (reset-pose)
-(send *robot* :newcoords (make-coords :rpy (list 0 (deg2rad 30) 0)))
-(setq a (test-torque-ik :init nil :gain 0.05 :null-max 0.5 :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -0.002) :dtau/df 1000.0))
+(send *robot* :newcoords (make-coords :rpy (list 0 (deg2rad 15) 0)))
+(setq a (test-torque-ik :init nil :gain nil :null-max 0.5 :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -0.002) :force-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -1.0) :contact-wrench-optimize? t))
 (print (norm (apply 'concatenate (cons float-vector (append (send a :f/fmax) (send a :t/tmax))))))
 ;; (test-torque-ik :init nil :gain nil :null-max 1.0)
 
 (reset-pose)
-(send *robot* :newcoords (make-coords :rpy (list 0 (deg2rad 30) 0)))
-(setq b (test-torque-ik :init nil :gain 750.0 :null-max 0.5 :mode :force-approximation :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -1.0) :dtau/df 0.001))
+(send *robot* :newcoords (make-coords :rpy (list 0 (deg2rad 15) 0)))
+(setq b (test-torque-ik :init nil :gain 750.0 :null-max 0.5 :mode :force-approximation :torque-gradient-root-link-virtual-joint-weight (fill (instantiate float-vector 6) -1.0) :contact-wrench-optimize? t))
 (print (norm (apply 'concatenate (cons float-vector (append (send b :f/fmax) (send b :t/tmax))))))

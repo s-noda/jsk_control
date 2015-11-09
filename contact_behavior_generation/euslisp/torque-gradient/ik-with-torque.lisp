@@ -134,8 +134,8 @@
 	  (progn ;; (setq *ik-convergence-user-check* 0.0)
 	    (print 'not-full-constrainted-rsd)))
     (send *now-rsd* :buf :contact-wrench-optimize-skip t))
-  ;; (setq *rsd-queue*
-  ;; (subseq (cons *now-rsd* *rsd-queue*) 0 100))
+  (setq *rsd-queue*
+	(subseq (cons *now-rsd* *rsd-queue*) 0 100))
   (setq buf
 	(mapcar
 	 #'cons
@@ -177,6 +177,8 @@
    (6dof? nil)
    (torque-gradient-root-link-virtual-joint-weight
     (fill (instantiate float-vector 6) 1e-2))
+   (force-gradient-root-link-virtual-joint-weight
+    torque-gradient-root-link-virtual-joint-weight)
    (gain nil) ;;1e-3)
    (null-max 0.3)
    (cnt -1)
@@ -361,11 +363,15 @@
 	    (cdr Jf)))
     (setq df (scale dtau/df df df))
     (setq dtau (copy-seq move))
-    (setq move (v- move df move))
+    ;; (setq move (v- move df move))
     ;;
-    (setq move
+    (setq df
 	  (child-reverse-filter
-	   move
+	   df
+	   (send-all (remove root-link ul) :joint) :6dof? 6dof?))
+    (setq dtau
+	  (child-reverse-filter
+	   dtau
 	   (send-all (remove root-link ul) :joint) :6dof? 6dof?))
     (cond
      ((and (not 6dof?)
@@ -373,18 +379,33 @@
       (setq
        move
        (concatenate
-	float-vector #F(0 0 0 0 0 0) move)))
+	float-vector #F(0 0 0 0 0 0) (v- dtau df))))
      (t
       (if 6dof?
-	  (setq move
-		(concatenate
-		 float-vector
-		 (subseq move (- (length move) 6) (length move))
-		 (subseq move 0 (- (length move) 6)))))
+          (let* ((buf) (last (- (length df) 6)))
+            (dotimes (i 6)
+              (setq buf (aref df i))
+              (setf (aref df i) (aref df (+ i last)))
+              (setf (aref df (+ i last)) buf)
+              ;;
+              (setq buf (aref dtau i))
+              (setf (aref dtau i) (aref dtau (+ i last)))
+              (setf (aref dtau (+ i last)) buf))))
+	  ;; (setq move
+	  ;;       (concatenate
+	  ;;        float-vector
+	  ;;        (subseq move (- (length move) 6) (length move))
+	  ;;        (subseq move 0 (- (length move) 6)))))
       (dotimes (i 6)
-	(setf (aref move i)
+	(setf (aref dtau i)
 	      (* (aref torque-gradient-root-link-virtual-joint-weight i)
-		 (aref move i))))))
+		 (aref dtau i)))
+        (setf (aref df i)
+	      (* (aref force-gradient-root-link-virtual-joint-weight i)
+		 (aref df i)))
+        )
+      (setq move (v- dtau df move))
+      ))
     (cond
      (debug?
       (format t "[/joint-angle]~%")
@@ -504,6 +525,7 @@
 	 args))
   (setq *best-rsd* best-rsd)
   (setq *now-rsd* now-rsd)
+  (setq *rsd-queue* nil)
   ;;(print args)
   (setq
    ret
