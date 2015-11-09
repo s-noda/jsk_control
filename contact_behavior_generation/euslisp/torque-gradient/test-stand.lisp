@@ -63,3 +63,5 @@
 (send *viewer* :viewsurface :write-to-image-file
       (format nil "~A/slope15_df.jpg" *root-dir*))
 
+(unix::system
+ (format nil (format nil "cd ~A; ./graph.sh;" *root-dir*)))
