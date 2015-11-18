@@ -29,10 +29,10 @@ w = 0.04
 import plot_dat as pd
 
 plt.bar(pd.X - w/2, pd.Y1, color='b', width=w, label="Torque Gradient", align="center")
-plt.bar(pd.X + w/2, pd.Y2, color='g', width=w, label="Qseudo Gradient", align="center")
+plt.bar(pd.X + w/2, pd.Y2, color='g', width=w, label="Pseudo Gradient", align="center")
 
 plt.legend(loc="best")
-plt.ylabel("histgram")
+plt.ylabel("Frequency")
 plt.xlabel("$\|Optimal Torque\|$/$\|Intial Torque\|$")
 
 plt.xticks(pd.X, pd.X)
