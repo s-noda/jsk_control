@@ -819,15 +819,15 @@
   ;; gen climb object
   (cond
    ((eq mode :simple-floor)
-    (require "model/simple-floor.lisp")
+    (require "package://contact_behavior_generation/euslisp/model/simple-floor.lisp")
     (setq *climb-obj* (instance simple-floor :init :z 0))
     (cond
      ((eq *robot-type* :staro)
       (setq *best-facefall*
 	    (caar (rsd-deserialize
 		   :file
-		   (format nil "~A/euslisp/gazebo_standup/facefall/best.rsd"
-			   (ros::rospack-find "tmp_hrpsys_util")))))
+		   (format nil "~A/euslisp/log/best-facefall.rsd"
+			   (ros::rospack-find "contact_behavior_generation")))))
       (send *best-facefall* :draw :friction-cone? nil)
       (dolist (k '(:rarm :larm))
 	(let* ((tag (read-from-string (format nil "~A-simple-floor-end-coords" k)))
@@ -862,7 +862,7 @@
 	       name cc cn ux uy uz lx ly f0 tc)))))
     )
    ((eq mode :four-leg-seat)
-    (require "model/four-leg-seat.lisp")
+    (require "package://contact_behavior_generation/euslisp/model/four-leg-seat.lisp")
     (setq *climb-obj* (instance four-leg-seat :init))
     (send *climb-obj* :translate
 	  (float-vector (- (/ (send *climb-obj* :get-val 'depth) -2.0) 100) 0 0)
@@ -878,24 +878,24 @@
 			 (flatten (send *robot* :arms :links))))))
     (setup-hip-end-coords))
    ((eq mode :rock-wall)
-    (require "model/random-rock-wall.lisp")
+    (require "package://contact_behavior_generation/euslisp/model/random-rock-wall.lisp")
     (setq *climb-obj* (instance random-rock-wall :init))
     (send *climb-obj* :translate #F(400 0 1500) :world)
 ;    (gl::transparent (*climb-obj* . wall-obj) 0.4)
     )
    ((eq mode :kirin-ladder)
-    (require "model/kirin-ladder.lisp")
+    (require "package://contact_behavior_generation/euslisp/model/kirin-ladder.lisp")
     (setq *climb-obj* (instance kirin-ladder :init))
     (send *climb-obj* :translate #F(150 0 0) :world))
    ((eq mode :hasegawa-ladder)
-    (require "model/hasegawa-ladder.lisp")
+    (require "package://contact_behavior_generation/euslisp/model/hasegawa-ladder.lisp")
     (setq *climb-obj* (instance hasegawa-ladder :init))
     (send *climb-obj* :translate #F(270 0 0) :world))
    ((eq mode :big-ladder)
-    (require "model/big-ladder.lisp")
+    (require "package://contact_behavior_generation/euslisp/model/big-ladder.lisp")
     (setq *climb-obj* (instance big-ladder :init)))
    ((eq mode :garakuta-car)
-    (require "model/garakuta-car.lisp")
+    (require "package://contact_behavior_generation/euslisp/model/garakuta-car.lisp")
     (setq *kca-cog-gain* 7.0)
     ;; (setq *pg-optional-ik-contact-states*
     ;;       (append *pg-optional-ik-contact-states*
@@ -943,7 +943,7 @@
     (send *climb-obj* :rotate (deg2rad -90) :z)
     (send *climb-obj* :translate #F(-550 0 0) :world))
    (t ; :param-ladder
-    (require "model/param-ladder.lisp")
+    (require "package://contact_behavior_generation/euslisp/model/param-ladder.lisp")
     (setq *climb-obj*
 	  (instance param-ladder :init
 		    :step-vector
