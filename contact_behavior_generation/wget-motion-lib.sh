@@ -1,4 +1,4 @@
-#!/usr/bin/env roseus
+#!/usr/bin/env bash
 
 wget www.jsk.t.u-tokyo.ac.jp/~s-noda/motion-lib-proposal.l ;
 mkdir -p euslisp/euslib/irteus_proposals;
