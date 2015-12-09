@@ -22,7 +22,9 @@
                    (send *robot* :reset-manip-pose)
                    (send *robot* :reset-pose)
                    (send *robot* :arms :elbow-p :joint-angle -90)
-                   (send *robot* :fix-leg-to-coords (make-coords))))
+                   (send *robot* :fix-leg-to-coords (make-coords))
+                   (send *viewer* :draw-objects)
+                   ))
            (rsd (demo-motion-sequence-with-timer
                  :ik-debug-view *ik-debug-view*
                  :loop-max 2
@@ -47,14 +49,31 @@
     (print 'four-leg-seat-error)
     t)))
 
-;; start test
+;;(init
+(progn (demo-climb-setup :four-leg-seat)
+       ;;
+       (dolist (v (send-all (send-all *contact-states* :target-coords) :worldpos))
+         (setf (aref v 2) (- (aref v 2) 10)))
+       ;;
+       ;; (setq *goal-contact-state* (nth 86 *contact-states*))
+       (setq *goal-contact-state* (nth 87 *contact-states*))
+       (send *robot* :reset-manip-pose)
+       (send *robot* :reset-pose)
+       (send *robot* :arms :elbow-p :joint-angle -90)
+       (send *robot* :fix-leg-to-coords (make-coords)))
 
+(defvar *rsd*)
 (defvar *log-root* (format nil "log/~A" (log-surfix)))
 (defvar *ik-debug-view* nil) ;;:no-message)
-(unix:system (format nil "mkdir -p ~A" *log-root*))
-
-(if (test-proc :four-leg-seat)
-    (warning-message 1 "not solutions found~%"))
+(cond
+ ((let* ((log (read-line (piped-fork "ls -t log | head -n 1") nil)))
+    (and log (probe-file (format nil "log/~A/four-leg-seat.rsd" log)))
+    (setq *rsd* (car (rsd-deserialize :file (format nil "log/~A/four-leg-seat.rsd" log)))))
+  'nop)
+ (t
+  (unix:system (format nil "mkdir -p ~A" *log-root*))
+  (if (test-proc :four-leg-seat)
+      (warning-message 1 "not solutions found~%"))))
 
 #|
 
