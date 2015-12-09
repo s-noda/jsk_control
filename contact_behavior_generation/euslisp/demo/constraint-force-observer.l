@@ -1,16 +1,25 @@
 #!/usr/bin/env roseus
 
-(defvar *viewer?* nil)
-
 (require "package://contact_behavior_generation/euslisp/euslib/irteus_proposals/motion-lib-proposal.l")
+(require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsk-interface.l")
 ;; (require "euslib/jsk/jsk.l")
 ;; (require "robot-state-subscriber.l")
 
 (ros::roseus "constraint_force_observer")
 (ros::load-ros-manifest "geometry_msgs")
 
-(require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsk-interface.l")
-(setq *robot* (hrp2jsk))
+
+(if (not (find-package "SENSOR_OBSERVER"))
+    (make-package "SENSOR_OBSERVER"))
+(In-package "SENSOR_OBSERVER")
+
+(defvar *viewer?* nil)
+
+(if (and (boundp 'user::*robot*) user::*robot*)
+    (setq *robot* user::*robot*))
+(cond
+ ((not (and (boundp '*robot*) *robot*))
+  (setq *robot* (user::hrp2jsk))))
 
 (defvar *sensor* (instance geometry_msgs::WrenchStamped :init))
 (defvar *contact-local-vertical-vector* #F(0 0 1))
@@ -37,14 +46,14 @@
 (defvar *mz* 0.9)
 (defvar *constraint-matrix*
   (let ((tmp-contact-constraint
-         (instance default-contact-constraint :init
+         (instance user::default-contact-constraint :init
                    :mu-trans *mx*
                    :mu-rot *mz*
                    :l-max-x *lx*
                    :l-min-x *-lx*
                    :l-max-y *ly*
                    :l-min-y *-ly*)))
-    (send tmp-contact-constraint :calc-constraint-matrix (make-coords))))
+    (send tmp-contact-constraint :calc-constraint-matrix (user::make-coords))))
 ;; (calc-constraint-matrices
 ;;  (make-coords)
 ;;  :mu-trans (/ (+ *mx* *my*) 2.0)
@@ -52,8 +61,29 @@
 ;;  :l-min-x *-lx* :l-min-y *-ly*
 ;;  :l-max-x *lx* :l-max-y *ly*))
 
-(defvar *skip-force* -50)
+(defvar *skip-force* 50)
 (defvar *last-echo-time* (car (unix::gettimeofday)))
+(defvar *error-vector*)
+
+(defun update-friction
+  (mx my mz)
+  (setq *lx* 50)
+  (setq *ly* 50)
+  (setq *-lx* -50)
+  (setq *-ly* -50)
+  (setq *mx* 0.9)
+  (setq *my* 0.9)
+  (setq *mz* 0.9)
+  (setq *constraint-matrix*
+        (let ((tmp-contact-constraint
+               (instance default-contact-constraint :init
+                         :mu-trans *mx*
+                         :mu-rot *mz*
+                         :l-max-x *lx*
+                         :l-min-x *-lx*
+                         :l-max-y *ly*
+                         :l-min-y *-ly*)))
+          (send tmp-contact-constraint :calc-constraint-matrix (user::make-coords)))))
 
 (defun worldforce-transform
   (f)
@@ -62,8 +92,8 @@
            (transform (send (send *link-cascoords* :worldcoords) :worldrot)
                       *contact-local-vertical-vector*)
            #F(0 0 1)))
-         (m (matrix-exponent
-             (normalize-vector (apply #'v* (reverse buf)))
+         (m (user::matrix-exponent
+             (user::normalize-vector (apply #'v* (reverse buf)))
              (acos (apply #'v. buf))))
          (ret
           (concatenate float-vector
@@ -77,7 +107,36 @@
   (dolist (fm '(:force :torque))
     (dolist (xyz '(:x :y :z))
       (send buf :wrench fm xyz
-            (send msg :wrench fm xyz)))))
+            (send msg :wrench fm xyz))))
+  ;;
+  (let* ((f (float-vector (send msg :wrench :force :x)
+                          (send msg :wrench :force :y)
+                          (send msg :wrench :force :z)
+                          (send msg :wrench :torque :x)
+                          (send msg :wrench :torque :y)
+                          (send msg :wrench :torque :z))))
+    (if (< (norm f) *skip-force*)
+        (setq *error-vector* nil)
+      (setq *error-vector*
+            (map float-vector
+                 #'(lambda (val min name)
+                     (cond
+                      ((< val min)
+                       (cond
+                        ((> (- (car (unix::gettimeofday)) *last-echo-time*)
+                            1)
+                         (setq *last-echo-time* (car (unix::gettimeofday)))
+                         (warning-message 1 "[~A] ~A = ~A > ~A ? ~A~%"
+                                          (ros::get-name) name
+                                          val min (> val min))))
+                       (ros::publish "/constraint_force_observer/error/string"
+                                     (instance std_msgs::string :init
+                                               :data (format nil "~A(~A) error=~A < 0" *link-name* name (- val min))))
+                       ))
+                     (- val min))
+                 (transform *constraint-matrix* (worldforce-transform f))
+                 *force0*
+                 (list "-fx" "+fx" "-fy" "+fy" "fz" "-nx" "+nx" "-ny" "+ny" "-nz" "+nz"))))))
 
 (ros::subscribe "/off_lfsensor"
                 geometry_msgs::WrenchStamped
@@ -89,40 +148,23 @@
 (ros::advertise "/constraint_force_observer/error_vector"
                 std_msgs::float32multiarray)
 
-(ros::rate 10)
-(do-until-key
- (if (not (ros::ok)) (return-from nil nil))
- (ros::spin-once)
- (ros::sleep)
- (let* ((f (float-vector (send *sensor* :wrench :force :x)
-                         (send *sensor* :wrench :force :y)
-                         (send *sensor* :wrench :force :z)
-                         (send *sensor* :wrench :torque :x)
-                         (send *sensor* :wrench :torque :y)
-                         (send *sensor* :wrench :torque :z))))
-   (if (> (norm f) *skip-force*)
-       (ros::publish
-        "/constraint_force_observer/error_vector"
-        (instance std_msgs::float32multiarray :init
-                  :data
-                  (map float-vector
-                       #'(lambda (val min name)
-                           (cond
-                            ((< val min)
-                             (cond
-                              ((> (- (car (unix::gettimeofday)) *last-echo-time*)
-                                  1)
-                               (setq *last-echo-time* (car (unix::gettimeofday)))
-                               (warning-message 1 "[~A] ~A = ~A > ~A ? ~A~%"
-                                                (ros::get-name) name
-                                                val min (> val min))))
-                             (ros::publish "/constraint_force_observer/error/string"
-                                           (instance std_msgs::string :init
-                                                     :data (format nil "~A(~A) error=~A < 0" *link-name* name (- val min))))
-                             ))
-                           (- val min))
-                       (transform *constraint-matrix* (worldforce-transform f))
-                       *force0*
-                       (list "-fx" "+fx" "-fy" "+fy" "fz" "-nx" "+nx" "-ny" "+ny" "-nz" "+nz")))))
-   ))
 
+(defun main
+  nil
+  (ros::rate 10)
+  (user::do-until-key
+   (if (not (ros::ok)) (return-from nil nil))
+   (ros::spin-once)
+   (ros::sleep)
+   (let* ((f (float-vector (send *sensor* :wrench :force :x)
+                           (send *sensor* :wrench :force :y)
+                           (send *sensor* :wrench :force :z)
+                           (send *sensor* :wrench :torque :x)
+                           (send *sensor* :wrench :torque :y)
+                           (send *sensor* :wrench :torque :z))))
+     (if (> (norm f) *skip-force*)
+         (ros::publish
+          "/constraint_force_observer/error_vector"
+          (instance std_msgs::float32multiarray :init
+                    :data *error-vector*))))
+   ))
