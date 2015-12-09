@@ -53,6 +53,52 @@
     (print 'four-leg-seat-error)
     t)))
 
+(defun slide-a-little
+  (av1 av2
+       &key
+       (move-deg 10)
+       (sleep-time 5000)
+       (av3 (v+ (scale move-deg (normalize-vector (v- av2 av1)))
+                av1))
+       (rate 100)
+       (error-flag nil)
+       )
+  (ros::rate rate)
+  (send *robot* :angle-vector av3)
+  (send *viewer* :draw-objects)
+  (model2real :sleep-time sleep-time :wait? nil)
+  (dotimes (i (/ sleep-time rate))
+    (ros::sleep)
+    (ros::spin-once)
+    (let* ((rleg_fmin
+            (apply 'min (coerce (or rleg_sensor_observer::*error-vector* '(0)) cons)))
+           (lleg_fmin
+            (apply 'min (coerce (or lleg_sensor_observer::*error-vector* '(0)) cons)))
+           (taumin
+            (apply 'min (coerce (or torque_sensor_observer::*error-vector* '(0)) cons))))
+      (cond
+       ((minusp rleg_fmin)
+        (setq error-flag t)
+        (warning-message 1 "right leg force limitation ~A~%" rleg_sensor_observer::*error-vector*))
+       ((minusp lleg_fmin)
+        (setq error-flag t)
+        (warning-message 1 "left leg force limitation ~A~%" lleg_sensor_observer::*error-vector*))
+       ((minusp taumin)
+        (setq error-flag t)
+        (warning-message 1 "torque limitation ~A~%" torque_sensor_observer::*error-vector*)))
+      (cond
+       (error-flag
+        (warning-message 1 "revert in ~A msec~%" sleep-time)
+        (send *robot* :angle-vector av1)
+        (send *viewer* :draw-objects)
+        (model2real :sleep-time sleep-time)
+        (return-from nil nil)
+        )
+       (t
+        (warning-message 6 "ok ~A/~A~%" i (/ sleep-time rate)))
+       )))
+  error-flag)
+
 (defun demo-seating
   nil
   (cond
@@ -76,6 +122,11 @@
   (send (nth 5 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
   (warning-message 1 "slide before?~%") (read-line)
   (model2real :sleep-time 5000)
+  ;; slide a little
+  (warning-message 1 "slide a little?~%") (read-line)
+  (if (slide-a-little (copy-seq (send (nth 5 (reverse *rsd*)) :angle-vector))
+                      (copy-seq (send (nth 6 (reverse *rsd*)) :angle-vector)))
+      (return-from demo-seating nil))
   ;; slide
   (send (nth 6 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
   (warning-message 1 "slide?~%") (read-line)
