@@ -4,9 +4,17 @@
 (ros::load-ros-manifest "geometry_msgs")
 
 (ros::roseus "constraint_torque_observer")
-
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsk-interface.l")
-(setq *robot* (hrp2jsk))
+
+(if (not (find-package "SENSOR_OBSERVER"))
+    (make-package "SENSOR_OBSERVER"))
+(In-package "SENSOR_OBSERVER")
+
+(if (and (boundp 'user::*robot*) user::*robot*)
+    (setq *robot* user::*robot*))
+(cond
+ ((not (and (boundp '*robot*) *robot*))
+  (setq *robot* (user::hrp2jsk))))
 
 (defvar *torque-constraint-rate* 0.7)
 (defvar *last-echo-time* (car (unix::gettimeofday)))
@@ -46,10 +54,12 @@
 (ros::advertise "/constraint_torque_observer/error/string"
 		std_msgs::string)
 
-(ros::rate 100)
-(do-until-key
- (if (not (ros::ok)) (return-from nil nil))
- (ros::spin-once)
- (ros::sleep)
- )
+(defun main
+  nil
+  (ros::rate 100)
+  (user::do-until-key
+   (if (not (ros::ok)) (return-from nil nil))
+   (ros::spin-once)
+   (ros::sleep)
+   ))
 
