@@ -8,10 +8,12 @@
 (ros::roseus "constraint_force_observer")
 (ros::load-ros-manifest "geometry_msgs")
 
-
-(if (not (find-package "SENSOR_OBSERVER"))
-    (make-package "SENSOR_OBSERVER"))
-(In-package "SENSOR_OBSERVER")
+(defvar *force-observer-limb* :rleg)
+(defvar *force-observer-package-name*
+  (format nil "~A_SENSOR_OBSERVER" (send *force-observer-limb* :pname)))
+(if (not (find-package *force-observer-package-name*))
+    (make-package *force-observer-package-name*))
+(In-package *force-observer-package-name*)
 
 (defvar *viewer?* nil)
 
@@ -23,7 +25,12 @@
 
 (defvar *sensor* (instance geometry_msgs::WrenchStamped :init))
 (defvar *contact-local-vertical-vector* #F(0 0 1))
-(defvar *link-name* "lfsensor")
+(defvar *link-name*
+  (case user::*force-observer-limb*
+        (:lleg "lfsensor")
+        (:rleg "rfsensor")
+        (:larm "lhsensor")
+        (:rarm "rhsensor")))
 (defvar *link-cascoords*
   (find-if #'(lambda (l) (string-equal *link-name* (send l :name)))
            (append (send *robot* :links)
@@ -129,7 +136,8 @@
                          (warning-message 1 "[~A] ~A = ~A > ~A ? ~A~%"
                                           (ros::get-name) name
                                           val min (> val min))))
-                       (ros::publish "/constraint_force_observer/error/string"
+                       (ros::publish (format nil "/constraint_force_observer/~A/error/string"
+                                             (remove #\: (format nil "~A" user::*force-observer-limb*)))
                                      (instance std_msgs::string :init
                                                :data (format nil "~A(~A) error=~A < 0" *link-name* name (- val min))))
                        ))
@@ -138,16 +146,22 @@
                  *force0*
                  (list "-fx" "+fx" "-fy" "+fy" "fz" "-nx" "+nx" "-ny" "+ny" "-nz" "+nz"))))))
 
-(ros::subscribe "/off_lfsensor"
-                geometry_msgs::WrenchStamped
-                #'copy-sensor-values *sensor*)
+(ros::subscribe
+ (case user::*force-observer-limb*
+       (:lleg "/off_lfsensor")
+       (:rleg "/off_rfsensor")
+       (:larm "/off_lhsensor")
+       (:rarm "/off_rhsensor"))
+ geometry_msgs::WrenchStamped
+ #'copy-sensor-values *sensor*)
 ;; (ros::advertise "/constraint_force_observer/status/string"
 ;; std_msgs::string)
-(ros::advertise "/constraint_force_observer/error/string"
+(ros::advertise (format nil "/constraint_force_observer/~A/error/string"
+                        (remove #\: (format nil "~A" user::*force-observer-limb*)))
                 std_msgs::string)
-(ros::advertise "/constraint_force_observer/error_vector"
+(ros::advertise (format nil "/constraint_force_observer/~A/error_vector"
+                        (remove #\: (format nil "~A" user::*force-observer-limb*)))
                 std_msgs::float32multiarray)
-
 
 (defun main
   nil
@@ -164,7 +178,8 @@
                            (send *sensor* :wrench :torque :z))))
      (if (> (norm f) *skip-force*)
          (ros::publish
-          "/constraint_force_observer/error_vector"
+          (format nil "/constraint_force_observer/~A/error_vector"
+                  (remove #\: (format nil "~A" user::*force-observer-limb*)))
           (instance std_msgs::float32multiarray :init
                     :data *error-vector*))))
    ))
