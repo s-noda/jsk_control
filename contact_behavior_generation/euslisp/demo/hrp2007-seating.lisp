@@ -49,6 +49,46 @@
     (print 'four-leg-seat-error)
     t)))
 
+(defun demo-seating
+  nil
+  (cond
+   ((not (and (boundp '*ri*) *ri*))
+    (warning-message 1 "initalize robot-interface~%")
+    (require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsk-interface.l")
+    (hrp2jsk-init)))
+  ;; init
+  (send (nth 1 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
+  (warning-message 1 "intial pose?~%") (read-line)
+  (model2real)
+  ;; seating
+  (send (nth 2 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
+  (warning-message 1 "seating?~%") (read-line)
+  (model2real :sleep-time 5000)
+  ;; suspend
+  (send (nth 4 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
+  (warning-message 1 "suspend?~%") (read-line)
+  (model2real :sleep-time 5000)
+  ;; slide before
+  (send (nth 5 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
+  (warning-message 1 "slide before?~%") (read-line)
+  (model2real :sleep-time 5000)
+  ;; slide
+  (send (nth 6 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
+  (warning-message 1 "slide?~%") (read-line)
+  (model2real :sleep-time 10000)
+  ;; last
+  (send (nth 7 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
+  (let* ((rleg (copy-seq (send *robot* :rleg :angle-vector)))
+         (lleg (copy-seq (send *robot* :lleg :angle-vector))))
+    (send *robot* :reset-pose)
+    (send *robot* :arms :elbow-p :joint-angle -90)
+    (send *robot* :rleg :angle-vector rleg)
+    (send *robot* :lleg :angle-vector lleg)
+    (send *viewer* :draw-objects))
+  (warning-message 1 "last?~%") (read-line)
+  (model2real :sleep-time 5000)
+  )
+
 ;;(init
 (progn (demo-climb-setup :four-leg-seat)
        ;;
