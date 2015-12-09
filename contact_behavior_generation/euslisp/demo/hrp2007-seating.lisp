@@ -5,6 +5,10 @@
 (require "package://contact_behavior_generation/euslisp/dynamic-connector.lisp")
 (require "package://contact_behavior_generation/euslisp/motion-planners/motion-planner.lisp")
 
+(setq *force-observer-limb* :lleg) (require :lleg-force-observer "constraint-force-observer.l")
+(setq *force-observer-limb* :rleg) (require :rleg-force-observer "constraint-force-observer.l")
+(require "constraint-torque-observer.l")
+
 ;; @Override
 (defun demo-motion-sequence (&rest args) (let* ((ret (apply 'demo-motion-sequence2 (append args (list :error-thre 1.1))))) (cons (car ret) (reverse (cdr ret)))))
 
