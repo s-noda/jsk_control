@@ -10,6 +10,6 @@
   </node>
   <!-- -->
   <node pkg="roseus" type="roseus" name="constraints_torque_observer"
-        args="&quot;(load \&quot;package\://contact_behavior_generation/euslisp/demo/constraint-torque-observer.l\&quot;)&quot; &quot;(sensor_observer::main)&quot;">
+        args="&quot;(load \&quot;package\://contact_behavior_generation/euslisp/demo/constraint-torque-observer.l\&quot;)&quot; &quot;(torque_sensor_observer::main)&quot;">
   </node>
 </launch>
