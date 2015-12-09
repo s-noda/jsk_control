@@ -1,19 +1,19 @@
 <launch>
   <node pkg="roseus" type="roseus" name="constraints_force_observer_rleg"
-	args="&quot;(progn (setq *contact-local-vertical-vector* #f(0 0 1)) (setq *link-name* \&quot;rfsensor\&quot;) (setq *skip-force* 50) (load \&quot;package\://contact_behavior_generation/euslisp/demo/constraint-force-observer.l\&quot;))&quot;">
+	args="&quot;(load \&quot;package\://contact_behavior_generation/euslisp/demo/constraint-force-observer.l\&quot;)&quot; &quot;(progn (setq sensor_observer::*contact-local-vertical-vector* #f(0 0 1)) (setq sensor_observer::*link-name* \&quot;rfsensor\&quot;) (setq sensor_observer::*skip-force* 50) (sensor_observer::main))&quot;">
     <!-- <remap from="/off_lfsensor" to="/filtered_rfsensor_x50" /> -->
     <remap from="/constraint_force_observer/error_vector" to="/constraint_force_observer/rleg/error_vector" />
     <remap from="/constraint_force_observer/error/string" to="/constraint_force_observer/rleg/error/string" />
   </node>
   <!-- -->
   <node pkg="roseus" type="roseus" name="constraints_force_observer_lleg"
-	args="&quot;(progn (setq *contact-local-vertical-vector* #f(0 0 1)) (setq *link-name* \&quot;rfsensor\&quot;) (setq *skip-force* 50) (load \&quot;package\://contact_behavior_generation/euslisp/demo/constraint-force-observer.l\&quot;))&quot;">
+	args="&quot;(load \&quot;package\://contact_behavior_generation/euslisp/demo/constraint-force-observer.l\&quot;)&quot; &quot;(progn (setq sensor_observer::*contact-local-vertical-vector* #f(0 0 1)) (setq sensor_observer::*link-name* \&quot;rfsensor\&quot;) (setq sensor_observer::*skip-force* 50) (sensor_observer::main))&quot;">
     <!-- <remap from="/off_lfsensor" to="/filtered_rfsensor_x50" /> -->
     <remap from="/constraint_force_observer/error_vector" to="/constraint_force_observer/lleg/error_vector" />
     <remap from="/constraint_force_observer/error/string" to="/constraint_force_observer/lleg/error/string" />
   </node>
   <!-- -->
   <node pkg="roseus" type="roseus" name="constraints_torque_observer"
-        args="&quot;(progn (load \&quot;package\://contact_behavior_generation/euslisp/demo/constraint-torque-observer.l\&quot;))&quot;">
+        args="&quot;(load \&quot;package\://contact_behavior_generation/euslisp/demo/constraint-torque-observer.l\&quot;)&quot; &quot;(sensor_observer::main)&quot;">
   </node>
 </launch>
