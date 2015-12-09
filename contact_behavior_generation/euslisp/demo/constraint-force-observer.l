@@ -5,17 +5,19 @@
 ;; (require "euslib/jsk/jsk.l")
 ;; (require "robot-state-subscriber.l")
 
+(defvar *force-observer-limb* :rleg)
+(setq *force-observer-package-name*
+      (format nil "~A_SENSOR_OBSERVER" (send *force-observer-limb* :pname)))
+
 (ros::roseus "constraint_force_observer")
 (ros::load-ros-manifest "geometry_msgs")
 
-(defvar *force-observer-limb* :rleg)
-(defvar *force-observer-package-name*
-  (format nil "~A_SENSOR_OBSERVER" (send *force-observer-limb* :pname)))
 (if (not (find-package *force-observer-package-name*))
     (make-package *force-observer-package-name*))
 (In-package *force-observer-package-name*)
 
 (defvar *viewer?* nil)
+(defvar *force-observer-limb* user::*force-observer-limb*)
 
 (if (and (boundp 'user::*robot*) user::*robot*)
     (setq *robot* user::*robot*))
@@ -26,7 +28,7 @@
 (defvar *sensor* (instance geometry_msgs::WrenchStamped :init))
 (defvar *contact-local-vertical-vector* #F(0 0 1))
 (defvar *link-name*
-  (case user::*force-observer-limb*
+  (case *force-observer-limb*
         (:lleg "lfsensor")
         (:rleg "rfsensor")
         (:larm "lhsensor")
@@ -134,10 +136,12 @@
                             1)
                          (setq *last-echo-time* (car (unix::gettimeofday)))
                          (warning-message 1 "[~A] ~A = ~A > ~A ? ~A~%"
-                                          (ros::get-name) name
+                                          ;;(ros::get-name)
+                                          *force-observer-limb*
+                                          name
                                           val min (> val min))))
                        (ros::publish (format nil "/constraint_force_observer/~A/error/string"
-                                             (remove #\: (format nil "~A" user::*force-observer-limb*)))
+                                             (remove #\: (format nil "~A" *force-observer-limb*)))
                                      (instance std_msgs::string :init
                                                :data (format nil "~A(~A) error=~A < 0" *link-name* name (- val min))))
                        ))
@@ -147,7 +151,7 @@
                  (list "-fx" "+fx" "-fy" "+fy" "fz" "-nx" "+nx" "-ny" "+ny" "-nz" "+nz"))))))
 
 (ros::subscribe
- (case user::*force-observer-limb*
+ (case *force-observer-limb*
        (:lleg "/off_lfsensor")
        (:rleg "/off_rfsensor")
        (:larm "/off_lhsensor")
@@ -157,10 +161,10 @@
 ;; (ros::advertise "/constraint_force_observer/status/string"
 ;; std_msgs::string)
 (ros::advertise (format nil "/constraint_force_observer/~A/error/string"
-                        (remove #\: (format nil "~A" user::*force-observer-limb*)))
+                        (remove #\: (format nil "~A" *force-observer-limb*)))
                 std_msgs::string)
 (ros::advertise (format nil "/constraint_force_observer/~A/error_vector"
-                        (remove #\: (format nil "~A" user::*force-observer-limb*)))
+                        (remove #\: (format nil "~A" *force-observer-limb*)))
                 std_msgs::float32multiarray)
 
 (defun main
@@ -179,7 +183,7 @@
      (if (> (norm f) *skip-force*)
          (ros::publish
           (format nil "/constraint_force_observer/~A/error_vector"
-                  (remove #\: (format nil "~A" user::*force-observer-limb*)))
+                  (remove #\: (format nil "~A" *force-observer-limb*)))
           (instance std_msgs::float32multiarray :init
                     :data *error-vector*))))
    ))
