@@ -20,8 +20,8 @@
                    ;; (setq *goal-contact-state* (nth 86 *contact-states*))
                    (setq *goal-contact-state* (nth 87 *contact-states*))
                    (send *robot* :reset-manip-pose)
-                   ;; (send *robot* :reset-pose)
-                   ;; (send *robot* :arms :elbow-p :joint-angle -90)
+                   (send *robot* :reset-pose)
+                   (send *robot* :arms :elbow-p :joint-angle -90)
                    (send *robot* :fix-leg-to-coords (make-coords))))
            (rsd (demo-motion-sequence-with-timer
                  :ik-debug-view *ik-debug-view*
@@ -61,8 +61,8 @@
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsk-interface.l")
 (hrp2jsk-init)
 
-(send (nth 0 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
-
+(send (nth 1 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
+(model2real)
 ;; init
 (send (nth 2 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
 (model2real :sleep-time 10000)
