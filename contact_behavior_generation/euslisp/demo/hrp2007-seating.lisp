@@ -12,42 +12,60 @@
 ;; @Override
 (defun demo-motion-sequence (&rest args) (let* ((ret (apply 'demo-motion-sequence2 (append args (list :error-thre 1.1))))) (cons (car ret) (reverse (cdr ret)))))
 
+
+;; test-proc
+;; test-proc :u-rate 2.0 :init (nth 5 (reverse *rsd*))
 (defun test-proc
-  (key)
-  (cond
-   ((let* ((init
-            (progn (demo-climb-setup :four-leg-seat)
-                   ;;
-                   (dolist (v (send-all (send-all *contact-states* :target-coords) :worldpos))
-                     (setf (aref v 2) (- (aref v 2) 10)))
-                   ;;
-                   ;; (setq *goal-contact-state* (nth 86 *contact-states*))
-                   (setq *goal-contact-state* (nth 87 *contact-states*))
-                   (send *robot* :reset-manip-pose)
-                   (send *robot* :reset-pose)
-                   (send *robot* :arms :elbow-p :joint-angle -90)
-                   (send *robot* :fix-leg-to-coords (make-coords))
-                   (send *viewer* :draw-objects)
-                   ))
-           (rsd (demo-motion-sequence-with-timer
-                 :ik-debug-view *ik-debug-view*
-                 :loop-max 2
-                 :remove-limb :hip
-                 :all-limbs '(:hip)
-                 :now-rsd
-                 ;;(instance robot-state-data2 :init :contact-states (cons (now-hip-contact-state) (now-contact-state :limb-keys '(:rleg :lleg))))
+  (&rest args &key (anime? nil) (u-rate 1.0) (u (* u-rate 0.2))
+         (init
+          (progn (send *robot* :reset-manip-pose)
+                 (send *robot* :reset-pose)
+                 (send *robot* :arms :elbow-p :joint-angle -90)
+                 (send *robot* :fix-leg-to-coords (make-coords))
+                 (send *viewer* :draw-objects)
                  (optimize-brli :contact-states
                                 (now-contact-state :limb-keys '(:rleg :lleg))
                                 :rest-contact-states
                                 (list (now-hip-contact-state)))
+                 ))
+         &allow-other-keys)
+  (send init :draw :friction-cone? nil :torque-draw? nil)
+  (demo-climb-setup :four-leg-seat)
+  (setq *contact-states*
+        (remove-if '(lambda (d) (< (norm (send (send d :target-coords) :difference-position (send (send d :contact-coords) :worldcoords))) 50)) *contact-states*))
+  (dolist (v (send-all (send-all *contact-states* :target-coords) :worldpos))
+    (setf (aref v 2) (- (aref v 2) 10)))
+  (dolist (c (remove-if '(lambda (cs) (not (eq (send cs :name) :hip))) *contact-states*))
+    (setf (aref (send c :slip-matrix) 0 2) u)
+    (setf (aref (send c :slip-matrix) 1 2) u)
+    (setf (aref (send c :slip-matrix) 5 2) u))
+  ;; (dolist (c *contact-states*)
+  ;; (send c :set-val 'gain '(1.0 1.0 1.0)))
+  (setq *goal-contact-state* (nth 87 *contact-states*))
+  ;;
+  (unix:system (format nil "mkdir -p ~A" *log-root*))
+  (cond
+   ((let* ((rsd (demo-motion-sequence-with-timer
+                 :ik-debug-view *ik-debug-view*
+                 :loop-max
+                 '(lambda (id)
+                    (< (norm (send (send *goal-contact-state* :target-coords)
+                                   :difference-position
+                                   (send (send *goal-contact-state* :contact-coords) :worldcoords)))
+                       10))
+                 :remove-limb :hip
+                 :all-limbs '(:hip)
+                 :now-rsd
+                 ;;(instance robot-state-data2 :init :contact-states (cons (now-hip-contact-state) (now-contact-state :limb-keys '(:rleg :lleg))))
+                 init
                  :tmax-hand-rate 1.0
                  :tmax-leg-rate 1.0
-                 :log-file (format nil "~A/four-leg-seat" *log-root*)
+                 :log-file (format nil "~A/four-leg-seat-u~A" *log-root* u)
                  )))
       (setq *rsd* rsd)
       (cond
-       ((listp rsd)
-        (rsd-play :file (format nil "~A/four-leg-seat.rsd" *log-root*) :auto? t)
+       ((and anime? (listp rsd))
+        (rsd-play :file (format nil "~A/four-leg-seat-u~A.rsd" *log-root* u) :auto? t)
         (quit-graph)))
       (atom rsd))
     (print 'four-leg-seat-error)
@@ -60,14 +78,14 @@
        (sleep-time 5000)
        (av3 (v+ (scale move-deg (normalize-vector (v- av2 av1)))
                 av1))
-       (rate 100)
+       (rate 30)
        (error-flag nil)
        )
   (ros::rate rate)
   (send *robot* :angle-vector av3)
   (send *viewer* :draw-objects)
   (model2real :sleep-time sleep-time :wait? nil)
-  (dotimes (i (/ sleep-time rate))
+  (dotimes (i (round (* rate (/ sleep-time 1000.0))))
     (ros::sleep)
     (ros::spin-once)
     (let* ((rleg_fmin
@@ -95,8 +113,8 @@
         (return-from nil nil)
         )
        (t
-        (warning-message 6 "ok ~A/~A~%" i (/ sleep-time rate)))
-       )))
+        (warning-message 6 "ok ~A/~A~%" i (round (* rate (/ sleep-time 1000.0))))
+        ))))
   error-flag)
 
 (defun demo-seating
@@ -149,7 +167,6 @@
        ;;
        (dolist (v (send-all (send-all *contact-states* :target-coords) :worldpos))
          (setf (aref v 2) (- (aref v 2) 10)))
-       ;;
        ;; (setq *goal-contact-state* (nth 86 *contact-states*))
        (setq *goal-contact-state* (nth 87 *contact-states*))
        (send *robot* :reset-manip-pose)
@@ -161,13 +178,14 @@
 (defvar *log-root* (format nil "log/~A" (log-surfix)))
 (defvar *ik-debug-view* nil) ;;:no-message)
 (cond
- ((let* ((log (read-line (piped-fork "ls -t log | head -n 1") nil)))
-    (and log (probe-file (format nil "log/~A/four-leg-seat.rsd" log)))
-    (setq *rsd* (car (rsd-deserialize :file (format nil "log/~A/four-leg-seat.rsd" log)))))
+ ((let* ((log (read-line (piped-fork "ls -t log/*/four-leg-seat.rsd | head -n 1") nil)))
+    (and
+     (and log (probe-file (format nil "~A" log)))
+     (setq *rsd* (car (rsd-deserialize :file (format nil "~A" log))))))
   'nop)
  (t
   (unix:system (format nil "mkdir -p ~A" *log-root*))
-  (if (test-proc :four-leg-seat)
+  (if (test-proc)
       (warning-message 1 "not solutions found~%"))))
 
 #|
