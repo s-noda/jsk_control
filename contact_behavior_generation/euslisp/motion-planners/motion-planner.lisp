@@ -341,7 +341,7 @@
    (if (not target-cs)
        (return-from :rsd-generate-with-contact-evaluation :no-candidate))
    (setq args-buf (list :robot robot :time-buf time-buf :call-cnt cnt-buf :update-contact-evaluation? update-contact-evaluation? :remove-limb remove-limb :now-rsd now-rsd :non-stop non-stop :tmax-hand-rate tmax-hand-rate :tmax-leg-rate tmax-leg-rate :ik-debug-view ik-debug-view :root-link-virtual-joint-weight root-link-virtual-joint-weight :pose-generate-stop pose-generate-stop))
-   (setq remove
+   (setq remove ;; not used?
 	 (apply #'funcall-with-time
 		(append (list #'remove-motion-sequence)
 			(list :index 0)
