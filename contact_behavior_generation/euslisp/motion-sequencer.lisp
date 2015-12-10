@@ -334,10 +334,13 @@
 			     (if (eq contact-trans-mode :walk) now-rsd
 			       (instance robot-state-data2 :init
 					 :contact-states
-					 (cons (car slide-cs-candidates)
-					       (remove remove-cs now-cs))))
-			     ;; (cons (car slide-cs-candidates)
-			     ;;(remove remove-cs now-cs))))
+                                         ;; (cons (car slide-cs-candidates)
+                                         ;; (remove remove-cs now-cs))
+                                         (mapcar
+                                          #'(lambda (cs) (if (eq cs remove-cs)
+                                                             (car slide-cs-candidates) cs))
+                                          now-cs)
+                                         ))
 			     :rest-cs
 			     (if (eq contact-trans-mode :walk) (list (car cs-candidates)))
 			     :remove-limb
