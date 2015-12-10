@@ -69,7 +69,12 @@
 		      (send *robot* :fix-leg-to-coords (make-coords))))
 	      (rsd (demo-motion-sequence-with-timer
 		    :ik-debug-view *ik-debug-view*
-		    :loop-max 2
+		    :loop-max
+                    '(lambda (id)
+                       (< (norm (send (send *goal-contact-state* :target-coords)
+                                      :difference-position
+                                      (send (send *goal-contact-state* :contact-coords) :worldcoords)))
+                          10))
 		    :remove-limb :hip
 		    :all-limbs '(:hip)
 		    :now-rsd
@@ -143,6 +148,7 @@
 
 ;; start test
 
+(setq *dcsf-max-dist-scale* 1.4)
 (defvar *log-root* (format nil "log/~A" (log-surfix)))
 (defvar *ik-debug-view* nil) ;;:no-message)
 (unix:system (format nil "mkdir ~A" *log-root*))
