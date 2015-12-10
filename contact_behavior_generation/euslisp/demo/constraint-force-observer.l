@@ -46,13 +46,13 @@
                 (aref *min-force* 4) (aref *min-force* 4)
                 (aref *min-force* 3) (aref *min-force* 3)
                 (aref *min-force* 2)))
-(defvar *lx* 50)
-(defvar *ly* 50)
-(defvar *-lx* -50)
-(defvar *-ly* -50)
-(defvar *mx* 0.9)
-(defvar *my* 0.9)
-(defvar *mz* 0.9)
+(defvar *lx* 100)
+(defvar *ly* 100)
+(defvar *-lx* -100)
+(defvar *-ly* -100)
+(defvar *mx* 0.19)
+(defvar *my* 0.19)
+(defvar *mz* 0.19)
 (defvar *constraint-matrix*
   (let ((tmp-contact-constraint
          (instance user::default-contact-constraint :init
@@ -70,16 +70,17 @@
 ;;  :l-min-x *-lx* :l-min-y *-ly*
 ;;  :l-max-x *lx* :l-max-y *ly*))
 
-(defvar *skip-force* 50)
+(defvar *skip-force* 30)
 (defvar *last-echo-time* (car (unix::gettimeofday)))
 (defvar *error-vector*)
+(defvar *error-vector-old*)
 
 (defun update-friction
   (mx my mz)
-  (setq *lx* 50)
-  (setq *ly* 50)
-  (setq *-lx* -50)
-  (setq *-ly* -50)
+  (setq *lx* 100)
+  (setq *ly* 100)
+  (setq *-lx* -100)
+  (setq *-ly* -100)
   (setq *mx* 0.9)
   (setq *my* 0.9)
   (setq *mz* 0.9)
@@ -111,22 +112,28 @@
     ;; (format t "--- ~A --> ~A~%" f ret)
     ret))
 
-(defun copy-sensor-values
-  (buf msg)
-  (dolist (fm '(:force :torque))
-    (dolist (xyz '(:x :y :z))
-      (send buf :wrench fm xyz
-            (send msg :wrench fm xyz))))
-  ;;
-  (let* ((f (float-vector (send msg :wrench :force :x)
-                          (send msg :wrench :force :y)
-                          (send msg :wrench :force :z)
-                          (send msg :wrench :torque :x)
-                          (send msg :wrench :torque :y)
-                          (send msg :wrench :torque :z))))
-    (if (< (norm f) *skip-force*)
-        (setq *error-vector* nil)
+(defun update-error-vector
+  (msg
+   &key
+   (f (float-vector (send msg :wrench :force :x)
+                    (send msg :wrench :force :y)
+                    (send msg :wrench :force :z)
+                    (send msg :wrench :torque :x)
+                    (send msg :wrench :torque :y)
+                    (send msg :wrench :torque :z))))
+  (if (< (norm f) *skip-force*)
+      (setq *error-vector* nil)
+    (progn
       (setq *error-vector*
+            (let* ((_f (worldforce-transform f))
+                   (fz (max (aref _f 2) 1e-3)))
+              (float-vector (/ (aref _f 0) (* *mx* fz))
+                            (/ (aref _f 1) (* *my* fz))
+                            0
+                            (/ (aref _f 3) (* *ly* fz))
+                            (/ (aref _f 4) (* *lx* fz))
+                            (/ (aref _f 5) (* *mz* fz)))))
+      (setq *error-vector-old*
             (map float-vector
                  #'(lambda (val min name)
                      (cond
@@ -145,10 +152,21 @@
                                      (instance std_msgs::string :init
                                                :data (format nil "~A(~A) error=~A < 0" *link-name* name (- val min))))
                        ))
-                     (- val min))
+                     (- val min)
+                     )
                  (transform *constraint-matrix* (worldforce-transform f))
                  *force0*
-                 (list "-fx" "+fx" "-fy" "+fy" "fz" "-nx" "+nx" "-ny" "+ny" "-nz" "+nz"))))))
+                 (list "-fx" "+fx" "-fy" "+fy" "fz" "-nx" "+nx" "-ny" "+ny" "-nz" "+nz")))
+      )))
+
+(defun copy-sensor-values
+  (buf msg)
+  (dolist (fm '(:force :torque))
+    (dolist (xyz '(:x :y :z))
+      (send buf :wrench fm xyz
+            (send msg :wrench fm xyz))))
+  ;;
+  (update-error-vector msg))
 
 (ros::subscribe
  (case *force-observer-limb*
@@ -163,7 +181,7 @@
 (ros::advertise (format nil "/constraint_force_observer/~A/error/string"
                         (remove #\: (format nil "~A" *force-observer-limb*)))
                 std_msgs::string)
-(ros::advertise (format nil "/constraint_force_observer/~A/error_vector"
+(ros::advertise (format nil "/constraint_force_observer/~A/error/vector"
                         (remove #\: (format nil "~A" *force-observer-limb*)))
                 std_msgs::float32multiarray)
 
