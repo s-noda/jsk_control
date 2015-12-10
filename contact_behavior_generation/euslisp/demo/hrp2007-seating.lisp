@@ -94,20 +94,36 @@
   (dotimes (i (round (* rate (/ sleep-time 1000.0))))
     (ros::sleep)
     (ros::spin-once)
+    (send *ri* :state)
+    (let* ((rfs (cdr (assoc :off-rfsensor (send *ri* :get-val 'robot-state))))
+           (lfs (cdr (assoc :off-lfsensor (send *ri* :get-val 'robot-state)))))
+      (if rfs (rleg_sensor_observer::update-error-vector nil :f rfs))
+      (if lfs (lleg_sensor_observer::update-error-vector nil :f lfs)))
+    (ros::publish "/constraint_torque_observer/error/vector"
+                  (instance std_msgs::float32multiarray :init
+                            :data torque_sensor_observer::*error-vector*))
+    (if lleg_sensor_observer::*error-vector*
+        (ros::publish "/constraint_force_observer/lleg/error/vector"
+                      (instance std_msgs::float32multiarray :init
+                                :data lleg_sensor_observer::*error-vector*)))
+    (if rleg_sensor_observer::*error-vector*
+        (ros::publish "/constraint_force_observer/rleg/error/vector"
+                      (instance std_msgs::float32multiarray :init
+                                :data rleg_sensor_observer::*error-vector*)))
     (let* ((rleg_fmin
-            (apply 'min (coerce (or rleg_sensor_observer::*error-vector* '(0)) cons)))
+            (apply 'max (map cons 'abs (or rleg_sensor_observer::*error-vector* '(0)))))
            (lleg_fmin
-            (apply 'min (coerce (or lleg_sensor_observer::*error-vector* '(0)) cons)))
+            (apply 'max (map cons 'abs (or lleg_sensor_observer::*error-vector* '(0)))))
            (taumin
-            (apply 'min (coerce (or torque_sensor_observer::*error-vector* '(0)) cons))))
+            (apply 'max (map cons 'abs (or torque_sensor_observer::*error-vector* '(0))))))
       (cond
-       ((minusp rleg_fmin)
+       ((> rleg_fmin 1)
         (setq error-flag t)
         (warning-message 1 "right leg force limitation ~A~%" rleg_sensor_observer::*error-vector*))
-       ((minusp lleg_fmin)
+       ((> lleg_fmin 1)
         (setq error-flag t)
         (warning-message 1 "left leg force limitation ~A~%" lleg_sensor_observer::*error-vector*))
-       ((minusp taumin)
+       ((> taumin 1)
         (setq error-flag t)
         (warning-message 1 "torque limitation ~A~%" torque_sensor_observer::*error-vector*)))
       (cond
