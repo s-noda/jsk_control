@@ -41,8 +41,8 @@
                          (ros::publish "/constraint_torque_observer/error/string"
                                        (instance std_msgs::string :init
                                                  :data (format nil "~A" name)))))
-                       (- (* *torque-constraint-rate* (abs (send j :max-joint-torque)))
-                          (abs tau))
+                       (/ tau (* *torque-constraint-rate* (abs (send j :max-joint-torque))))
+                       ;; )
                        )
                     (t
                      (cond
@@ -61,6 +61,8 @@
                 #'joint-state-callback 1)
 (ros::advertise "/constraint_torque_observer/error/string"
                 std_msgs::string)
+(ros::advertise "/constraint_torque_observer/error/vector"
+                std_msgs::float32multiarray)
 
 (defun main
   nil
