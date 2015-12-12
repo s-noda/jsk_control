@@ -50,9 +50,9 @@
 (defvar *ly* 100)
 (defvar *-lx* -100)
 (defvar *-ly* -100)
-(defvar *mx* 0.19)
-(defvar *my* 0.19)
-(defvar *mz* 0.19)
+(defvar *mx* (* 0.5 0.4))
+(defvar *my* (* 0.5 0.4))
+(defvar *mz* (* 0.5 0.4))
 (defvar *constraint-matrix*
   (let ((tmp-contact-constraint
          (instance user::default-contact-constraint :init
