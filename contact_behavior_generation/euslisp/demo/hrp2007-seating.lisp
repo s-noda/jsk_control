@@ -9,6 +9,7 @@
 
 (setq *force-observer-limb* :lleg) (require :lleg-force-observer "constraint-force-observer.l")
 (setq *force-observer-limb* :rleg) (require :rleg-force-observer "constraint-force-observer.l")
+(setq *force-observer-limb* :hip) (require :hip-force-observer "constraint-force-observer.l")
 (require "constraint-torque-observer.l")
 
 ;; @Override
@@ -20,6 +21,7 @@
 
 ;; test-proc
 ;; test-proc :u-rate 2.0 :init (nth 5 (reverse *rsd*))
+(setq  *kca-cog-gain* 1)
 (defun test-proc
   (&rest args &key (anime? nil) (u-rate 1.0) (u (* u-rate 0.2))
          (init
@@ -101,6 +103,7 @@
        (error-flag nil)
        (never-stop? nil)
        (error-thre 1.0)
+       rfs-org lfs-org
        )
   (ros::rate rate)
   (send *robot* :angle-vector av3)
@@ -108,43 +111,60 @@
   (model2real :sleep-time sleep-time :wait? nil)
   ;;
   (warning-message 6 "start sliding: thre: ~A~%" error-thre)
+  ;;
+  (dotimes (i (round (* rate (/ sleep-time 1000.0))))
+    (ros::sleep)
+    (ros::spin-once)
+    (send *ri* :state)
+    (setq rfs-org (cdr (assoc :off-rfsensor (send *ri* :get-val 'robot-state))))
+    (setq lfs-org (cdr (assoc :off-lfsensor (send *ri* :get-val 'robot-state))))
+    (if (and rfs-org lfs-org) (return-from nil nil)))
+  ;;
   (dotimes (i (round (* rate (/ sleep-time 1000.0))))
     (ros::sleep)
     (ros::spin-once)
     (send *ri* :state)
     (let* ((rfs (cdr (assoc :off-rfsensor (send *ri* :get-val 'robot-state))))
            (lfs (cdr (assoc :off-lfsensor (send *ri* :get-val 'robot-state)))))
-      (if rfs (rleg_sensor_observer::update-error-vector nil :f rfs))
-      (if lfs (lleg_sensor_observer::update-error-vector nil :f lfs)))
+      (if rfs (rleg_sensor_observer::update-error-vector nil :f rfs :off-f rfs-org))
+      (if lfs (lleg_sensor_observer::update-error-vector nil :f lfs :off-f lfs-org)))
+    ;;
+    (lleg_sensor_observer::publish-error-vector)
+    (rleg_sensor_observer::publish-error-vector)
+    ;;
     (ros::publish "/constraint_torque_observer/error/vector"
                   (instance std_msgs::float32multiarray :init
                             :data torque_sensor_observer::*error-vector*))
     ;;
-    (ros::publish "/hrp2007_seating/slide/thre" (instance std_msgs::float32 :init :data 1))
-    (ros::publish "/hrp2007_seating/slide/prediction" (instance std_msgs::float32 :init :data error-thre))
+    (ros::publish "/hrp2007_seating/slide/thre/p" (instance std_msgs::float32 :init :data 1))
+    (ros::publish "/hrp2007_seating/slide/prediction/p" (instance std_msgs::float32 :init :data error-thre))
+    (ros::publish "/hrp2007_seating/slide/thre/n" (instance std_msgs::float32 :init :data -1))
+    (ros::publish "/hrp2007_seating/slide/prediction/n" (instance std_msgs::float32 :init :data (* -1 error-thre)))
     ;;
-    (if lleg_sensor_observer::*error-vector*
-        (ros::publish "/constraint_force_observer/lleg/error/vector"
-                      (instance std_msgs::float32multiarray :init
-                                :data lleg_sensor_observer::*error-vector*)))
-    (if rleg_sensor_observer::*error-vector*
-        (ros::publish "/constraint_force_observer/rleg/error/vector"
-                      (instance std_msgs::float32multiarray :init
-                                :data rleg_sensor_observer::*error-vector*)))
     (let* ((rleg_fmin
             (apply 'max (map cons 'abs (or rleg_sensor_observer::*error-vector* '(0)))))
            (lleg_fmin
             (apply 'max (map cons 'abs (or lleg_sensor_observer::*error-vector* '(0)))))
+           (off_rleg_fmin
+            (apply 'max (map cons 'abs (or rleg_sensor_observer::*off-error-vector* '(0)))))
+           (off_lleg_fmin
+            (apply 'max (map cons 'abs (or lleg_sensor_observer::*off-error-vector* '(0)))))
            (taumin
             (apply 'max (map cons 'abs (or torque_sensor_observer::*error-vector* '(0))))))
       (cond
-       ((> rleg_fmin error-thre)
+       ((> rleg_fmin 1.0)
         (setq error-flag t)
         (warning-message 1 "right leg force limitation ~A~%" rleg_sensor_observer::*error-vector*))
-       ((> lleg_fmin error-thre)
+       ((> lleg_fmin 1.0)
         (setq error-flag t)
         (warning-message 1 "left leg force limitation ~A~%" lleg_sensor_observer::*error-vector*))
-       ((> taumin 1)
+       ((> off_rleg_fmin error-thre)
+        (setq error-flag t)
+        (warning-message 1 "right leg off-force limitation ~A~%" rleg_sensor_observer::*off-error-vector*))
+       ((> off_lleg_fmin error-thre)
+        (setq error-flag t)
+        (warning-message 1 "left leg off-force limitation ~A~%" lleg_sensor_observer::*off-error-vector*))
+       ((> taumin 1.0)
         (setq error-flag t)
         (warning-message 1 "torque limitation ~A~%" torque_sensor_observer::*error-vector*)))
       (cond
@@ -200,7 +220,7 @@
         (send rsd :draw :friction-cone? nil :torque-draw? nil)
         (warning-message 1 "ok?~%")
         (if (y-or-n-p)
-            (model2real :sleep-time 3000))))
+            (model2real :sleep-time 5000))))
       ;;
       ))
   ;;
@@ -214,7 +234,7 @@
     (send *viewer* :draw-objects))
   (warning-message 1 "last?~%")
   (if (y-or-n-p)
-      (model2real :sleep-time 3000))
+      (model2real :sleep-time 5000))
   t
   )
 
@@ -265,8 +285,10 @@
 
 ;;init
 
-(ros::advertise "/hrp2007_seating/slide/thre" std_msgs::float32)
-(ros::advertise "/hrp2007_seating/slide/prediction" std_msgs::float32)
+(ros::advertise "/hrp2007_seating/slide/thre/p" std_msgs::float32)
+(ros::advertise "/hrp2007_seating/slide/prediction/p" std_msgs::float32)
+(ros::advertise "/hrp2007_seating/slide/thre/n" std_msgs::float32)
+(ros::advertise "/hrp2007_seating/slide/prediction/n" std_msgs::float32)
 
 (progn (demo-climb-setup :four-leg-seat)
        ;;
