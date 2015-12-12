@@ -32,11 +32,14 @@
         (:lleg "lfsensor")
         (:rleg "rfsensor")
         (:larm "lhsensor")
-        (:rarm "rhsensor")))
+        (:rarm "rhsensor")
+        (t "sensor")))
 (defvar *link-cascoords*
-  (find-if #'(lambda (l) (string-equal *link-name* (send l :name)))
-           (append (send *robot* :links)
-                   (send *robot* :force-sensors))))
+  (or
+   (find-if #'(lambda (l) (string-equal *link-name* (send l :name)))
+            (append (send *robot* :links)
+                    (send *robot* :force-sensors)))
+   (make-cascoords)))
 
 (defvar *min-force* #F(0 0 0 0 0 0))
 (defvar *force0*
@@ -73,6 +76,7 @@
 (defvar *skip-force* 30)
 (defvar *last-echo-time* (car (unix::gettimeofday)))
 (defvar *error-vector*)
+(defvar *off-error-vector*)
 (defvar *error-vector-old*)
 
 (defun update-friction
@@ -120,7 +124,9 @@
                     (send msg :wrench :force :z)
                     (send msg :wrench :torque :x)
                     (send msg :wrench :torque :y)
-                    (send msg :wrench :torque :z))))
+                    (send msg :wrench :torque :z)))
+   (off-f (scale 0 f))
+   )
   (if (< (norm f) *skip-force*)
       (setq *error-vector* nil)
     (progn
@@ -133,6 +139,19 @@
                             (/ (aref _f 3) (* *ly* fz))
                             (/ (aref _f 4) (* *lx* fz))
                             (/ (aref _f 5) (* *mz* fz)))))
+      ;;
+      (if off-f
+          (setq *off-error-vector*
+                (let* ((_f (worldforce-transform f))
+                       (_off-f (worldforce-transform off-f))
+                       (fz (max (aref _f 2) 1e-3)))
+                  (float-vector (/ (- (aref _f 0) (aref _off-f 0)) (* *mx* fz))
+                                (/ (- (aref _f 1) (aref _off-f 1)) (* *my* fz))
+                                0
+                                (/ (- (aref _f 3) (aref _off-f 3)) (* *ly* fz))
+                                (/ (- (aref _f 4) (aref _off-f 4)) (* *lx* fz))
+                                (/ (- (aref _f 5) (aref _off-f 5))  (* *mz* fz))))))
+      ;;
       (setq *error-vector-old*
             (map float-vector
                  #'(lambda (val min name)
@@ -173,7 +192,8 @@
        (:lleg "/off_lfsensor")
        (:rleg "/off_rfsensor")
        (:larm "/off_lhsensor")
-       (:rarm "/off_rhsensor"))
+       (:rarm "/off_rhsensor")
+       (t "/hoge"))
  geometry_msgs::WrenchStamped
  #'copy-sensor-values *sensor*)
 ;; (ros::advertise "/constraint_force_observer/status/string"
@@ -184,6 +204,24 @@
 (ros::advertise (format nil "/constraint_force_observer/~A/error/vector"
                         (remove #\: (format nil "~A" *force-observer-limb*)))
                 std_msgs::float32multiarray)
+(ros::advertise (format nil "/constraint_force_observer/~A/off_error/vector"
+                        (remove #\: (format nil "~A" *force-observer-limb*)))
+                std_msgs::float32multiarray)
+
+(defun publish-error-vector
+  nil
+  (if *error-vector*
+      (ros::publish
+       (format nil "/constraint_force_observer/~A/error/vector"
+               (remove #\: (format nil "~A" *force-observer-limb*)))
+       (instance std_msgs::float32multiarray :init
+                 :data *error-vector*)))
+  (if *off-error-vector*
+      (ros::publish
+       (format nil "/constraint_force_observer/~A/off_error/vector"
+               (remove #\: (format nil "~A" *force-observer-limb*)))
+       (instance std_msgs::float32multiarray :init
+                 :data *off-error-vector*))))
 
 (defun main
   nil
@@ -192,16 +230,5 @@
    (if (not (ros::ok)) (return-from nil nil))
    (ros::spin-once)
    (ros::sleep)
-   (let* ((f (float-vector (send *sensor* :wrench :force :x)
-                           (send *sensor* :wrench :force :y)
-                           (send *sensor* :wrench :force :z)
-                           (send *sensor* :wrench :torque :x)
-                           (send *sensor* :wrench :torque :y)
-                           (send *sensor* :wrench :torque :z))))
-     (if (> (norm f) *skip-force*)
-         (ros::publish
-          (format nil "/constraint_force_observer/~A/error_vector"
-                  (remove #\: (format nil "~A" *force-observer-limb*)))
-          (instance std_msgs::float32multiarray :init
-                    :data *error-vector*))))
-   ))
+)
+  )
