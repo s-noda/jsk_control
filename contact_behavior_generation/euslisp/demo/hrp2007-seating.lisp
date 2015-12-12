@@ -92,6 +92,7 @@
     (print 'four-leg-seat-error)
     t)))
 
+(defvar *external-force* (float-vector 0 0 (* 1e-3 9.8 (send *robot* :weight)) 0 0 0))
 (defun slide-a-little
   (av1 av2
        &key
@@ -125,12 +126,16 @@
     (ros::spin-once)
     (send *ri* :state)
     (let* ((rfs (cdr (assoc :off-rfsensor (send *ri* :get-val 'robot-state))))
-           (lfs (cdr (assoc :off-lfsensor (send *ri* :get-val 'robot-state)))))
+           (lfs (cdr (assoc :off-lfsensor (send *ri* :get-val 'robot-state))))
+           (cog (if (and rfs lfs) (v- (v- *external-force* rfs) lfs)))
+           )
       (if rfs (rleg_sensor_observer::update-error-vector nil :f rfs :off-f rfs-org))
-      (if lfs (lleg_sensor_observer::update-error-vector nil :f lfs :off-f lfs-org)))
+      (if lfs (lleg_sensor_observer::update-error-vector nil :f lfs :off-f lfs-org))
+      (if cog (hip_sensor_observer::update-error-vector nil :f cog)))
     ;;
     (lleg_sensor_observer::publish-error-vector)
     (rleg_sensor_observer::publish-error-vector)
+    (hip_sensor_observer::publish-error-vector)
     ;;
     (ros::publish "/constraint_torque_observer/error/vector"
                   (instance std_msgs::float32multiarray :init
