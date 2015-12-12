@@ -103,7 +103,8 @@
        (rate 30)
        (error-flag nil)
        (never-stop? nil)
-       (error-thre 1.0)
+       (off-error-thre 1.0)
+       (hip-error-thre 1.0)
        rfs-org lfs-org
        )
   (ros::rate rate)
@@ -111,7 +112,7 @@
   (send *viewer* :draw-objects)
   (model2real :sleep-time sleep-time :wait? nil)
   ;;
-  (warning-message 6 "start sliding: thre: ~A~%" error-thre)
+  (warning-message 6 "start sliding: off-thre:~A, hip-thre:~A~%" off-error-thre hip-error-thre)
   ;;
   (dotimes (i (round (* rate (/ sleep-time 1000.0))))
     (ros::sleep)
@@ -142,9 +143,9 @@
                             :data torque_sensor_observer::*error-vector*))
     ;;
     (ros::publish "/hrp2007_seating/slide/thre/p" (instance std_msgs::float32 :init :data 1))
-    (ros::publish "/hrp2007_seating/slide/prediction/p" (instance std_msgs::float32 :init :data error-thre))
+    (ros::publish "/hrp2007_seating/slide/prediction/p" (instance std_msgs::float32 :init :data hip-error-thre))
     (ros::publish "/hrp2007_seating/slide/thre/n" (instance std_msgs::float32 :init :data -1))
-    (ros::publish "/hrp2007_seating/slide/prediction/n" (instance std_msgs::float32 :init :data (* -1 error-thre)))
+    (ros::publish "/hrp2007_seating/slide/prediction/n" (instance std_msgs::float32 :init :data (* -1 hip-error-thre)))
     ;;
     (let* ((rleg_fmin
             (apply 'max (map cons 'abs (or rleg_sensor_observer::*error-vector* '(0)))))
@@ -155,18 +156,24 @@
            (off_lleg_fmin
             (apply 'max (map cons 'abs (or lleg_sensor_observer::*off-error-vector* '(0)))))
            (taumin
-            (apply 'max (map cons 'abs (or torque_sensor_observer::*error-vector* '(0))))))
+            (apply 'max (map cons 'abs (or torque_sensor_observer::*error-vector* '(0)))))
+           (hip_fmin
+            (apply 'max (map cons 'abs (or hip_sensor_observer::*error-vector* '(0)))))
+           )
       (cond
+       ((> hip_fmin hip-error-thre)
+        (setq error-flag t)
+        (warning-message 1 "hip force limitation ~A~%" hip_sensor_observer::*error-vector*))
        ((> rleg_fmin 1.0)
         (setq error-flag t)
         (warning-message 1 "right leg force limitation ~A~%" rleg_sensor_observer::*error-vector*))
        ((> lleg_fmin 1.0)
         (setq error-flag t)
         (warning-message 1 "left leg force limitation ~A~%" lleg_sensor_observer::*error-vector*))
-       ((> off_rleg_fmin error-thre)
+       ((> off_rleg_fmin off-error-thre)
         (setq error-flag t)
         (warning-message 1 "right leg off-force limitation ~A~%" rleg_sensor_observer::*off-error-vector*))
-       ((> off_lleg_fmin error-thre)
+       ((> off_lleg_fmin off-error-thre)
         (setq error-flag t)
         (warning-message 1 "left leg off-force limitation ~A~%" lleg_sensor_observer::*off-error-vector*))
        ((> taumin 1.0)
@@ -186,7 +193,7 @@
   error-flag)
 
 (defun demo-seating-proc
-  nil
+  (&optional (mu 0.2))
   (cond
    ((not (and (boundp '*ri*) *ri*))
     (warning-message 1 "initalize robot-interface~%")
@@ -202,12 +209,14 @@
             (if (slide-a-little (copy-seq (send slide? :angle-vector))
                                 (copy-seq (send rsd :angle-vector))
                                 :sleep-time 5000
-                                :error-thre
-                                (* 0.5 2.0
-                                   (+ (/ (abs (aref (send slide? :contact-forces :rleg) 0))
-                                         (max 1e-3 (abs (aref (send slide? :contact-forces :rleg) 2))))
-                                      (/ (abs (aref (send slide? :contact-forces :lleg) 0))
-                                         (max 1e-3 (abs (aref (send slide? :contact-forces :lleg) 2))))))
+                                ;; :off-error-thre
+                                ;; (max 0.1
+                                ;;      (* 0.5 1.5
+                                ;;         (+ (/ (abs (aref (send slide? :contact-forces :rleg) 0))
+                                ;;               (max 1e-3 (abs (aref (send slide? :contact-forces :rleg) 2))))
+                                ;;            (/ (abs (aref (send slide? :contact-forces :lleg) 0))
+                                ;;               (max 1e-3 (abs (aref (send slide? :contact-forces :lleg) 2)))))))
+                                :hip-error-thre (* mu 0.8)
                                 )
                 (return-from demo-seating-proc slide?)))
         ;;
@@ -218,12 +227,14 @@
                             :av3 (copy-seq (send rsd :angle-vector))
                             :sleep-time 5000
                             :never-stop? t
-                            :error-thre
-                            (* 0.5 2.0
-                               (+ (/ (abs (aref (send rsd :contact-forces :rleg) 0))
-                                     (max 1e-3 (abs (aref (send rsd :contact-forces :rleg) 2))))
-                                  (/ (abs (aref (send rsd :contact-forces :lleg) 0))
-                                     (max 1e-3 (abs (aref (send rsd :contact-forces :lleg) 2))))))
+                            :hip-error-thre (* mu 0.8)
+                            ;; :off-error-thre
+                            ;; (max 0.1
+                            ;;      (* 0.5 1.5
+                            ;;         (+ (/ (abs (aref (send rsd :contact-forces :rleg) 0))
+                            ;;               (max 1e-3 (abs (aref (send rsd :contact-forces :rleg) 2))))
+                            ;;            (/ (abs (aref (send rsd :contact-forces :lleg) 0))
+                            ;;               (max 1e-3 (abs (aref (send rsd :contact-forces :lleg) 2)))))))
                             ))
         (setq slide? nil))
        (t
@@ -267,7 +278,7 @@
 (defun demo-seating
   (&key (rsd nil) (rsd-list *rsd*))
   (setq *rsd-list* nil)
-  (dolist (u-rate '(1 3 5))
+  (dolist (u-rate '(1 5 10 20))
     (warning-message 1 " -- gen rsd, U-RATE: ~A~%" u-rate)
     (setq rsd-list (or rsd-list
                        (progn
@@ -280,7 +291,7 @@
       (warning-message 1 " -- abort: no anster~%")
       (return-from demo-seating nil)))
     ;;
-    (setq rsd (demo-seating-proc))
+    (setq rsd (demo-seating-proc (* u-rate 0.2)))
     (cond
      ((eq rsd t)
       (warning-message 1 " -- success!~%")
