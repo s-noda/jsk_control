@@ -39,7 +39,7 @@
    (find-if #'(lambda (l) (string-equal *link-name* (send l :name)))
             (append (send *robot* :links)
                     (send *robot* :force-sensors)))
-   (make-cascoords)))
+   (user::make-cascoords)))
 
 (defvar *min-force* #F(0 0 0 0 0 0))
 (defvar *force0*
