@@ -201,8 +201,9 @@
         (if (y-or-n-p)
             (if (slide-a-little (copy-seq (send slide? :angle-vector))
                                 (copy-seq (send rsd :angle-vector))
+                                :sleep-time 5000
                                 :error-thre
-                                (* 0.5
+                                (* 0.5 2.0
                                    (+ (/ (abs (aref (send slide? :contact-forces :rleg) 0))
                                          (max 1e-3 (abs (aref (send slide? :contact-forces :rleg) 2))))
                                       (/ (abs (aref (send slide? :contact-forces :lleg) 0))
@@ -217,6 +218,12 @@
                             :av3 (copy-seq (send rsd :angle-vector))
                             :sleep-time 5000
                             :never-stop? t
+                            :error-thre
+                            (* 0.5 2.0
+                               (+ (/ (abs (aref (send rsd :contact-forces :rleg) 0))
+                                     (max 1e-3 (abs (aref (send rsd :contact-forces :rleg) 2))))
+                                  (/ (abs (aref (send rsd :contact-forces :lleg) 0))
+                                     (max 1e-3 (abs (aref (send rsd :contact-forces :lleg) 2))))))
                             ))
         (setq slide? nil))
        (t
