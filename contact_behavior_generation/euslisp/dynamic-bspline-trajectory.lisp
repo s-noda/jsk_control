@@ -2,7 +2,7 @@
 ;; #-:jsk (jsk)
 ;; #-:rbrain-basic (rbrain)
 
-(defvar *robot-type* :jaxon)
+(defvar *robot-type* :hrp2jsknt-collada)
 
 (require "motion-sequencer.lisp")
 (if (not (functionp 'float-limb-trajectory))
@@ -859,7 +859,8 @@
 	   #'(lambda (name)
 	       (cond
 		((or (null (send now-rsd :contact-states name))
-		     (and (eq name (send now-rsd :buf :remove-limb))
+		     (and (not (send now-rsd :buf :slide))
+			  (eq name (send now-rsd :buf :remove-limb))
 			  (eq name (send goal-rsd :buf :remove-limb))))
 		 (list (unit-matrix 6) (instantiate float-vector 6) nil))
 		(t
@@ -1087,11 +1088,21 @@
    ;; (print contact-states)
    (send robot :angle-vector
 	 (copy-seq (send traj :position)))
-   (send robot :transform
-	 (send (send (car (send robot :links)) :copy-worldcoords)
-	       :transformation
-	       (send traj :coords))
-	 :local)
+   ;;
+   (while (or
+	   (> (print (norm (send (car (send robot :links))
+				 :difference-position (send traj :coords))))
+	      1)
+	   (> (print (norm (send (car (send robot :links))
+				 :difference-rotation (send traj :coords))))
+	      (deg2rad 1)))
+     (send robot :transform
+	   (send (send (car (send robot :links)) :copy-worldcoords)
+		 :transformation
+		 (send traj :coords))
+	   :local))
+   ;;
+   (send-all (send robot :links) :worldcoords)
    ;; (format t  "~A ~A~%" contact-states traj)
    (setq mat
 	 (calc-torque-eq
@@ -1110,7 +1121,9 @@
 		       (cons :link
 			     (send (send cs :contact-coords) :parent))
 		       (cons :worldcoords
-			     (copy-object (send cs :target-coords)))))
+			     ;; (copy-object (send cs :target-coords))
+			     (send (send cs :contact-coords) :copy-worldcoords)
+			     )))
 		  (flatten contact-states))
 	  :all-links (cdr (send robot :links))
 	  :dq (map float-vector #'deg2rad (send traj :velocity))
