@@ -101,10 +101,12 @@
        (av3 (v+ (scale move-deg (normalize-vector (v- av2 av1)))
                 av1))
        (rate 30)
+       (min-cnt 10)
        (error-flag nil)
        (never-stop? nil)
        (off-error-thre 1.0)
        (hip-error-thre 1.0)
+       (mu-buf (float-vector 0))
        rfs-org lfs-org
        )
   (ros::rate rate)
@@ -158,11 +160,15 @@
            (taumin
             (apply 'max (map cons 'abs (or torque_sensor_observer::*error-vector* '(0)))))
            (hip_fmin
-            (apply 'max (map cons 'abs (or hip_sensor_observer::*error-vector* '(0)))))
+            ;; (apply 'max (map cons 'abs (or hip_sensor_observer::*error-vector* '(0))))
+            (if hip_sensor_observer::*error-vector*
+                (/ (abs (aref hip_sensor_observer::*error-vector* 0))
+                   (max 1e-3 (abs (aref hip_sensor_observer::*error-vector* 2)))) 0))
            )
       (cond
        ((> hip_fmin hip-error-thre)
         (setq error-flag t)
+        (setf (aref mu-buf 0) hip_fmin)
         (warning-message 1 "hip force limitation ~A~%" hip_sensor_observer::*error-vector*))
        ((> rleg_fmin 1.0)
         (setq error-flag t)
@@ -180,7 +186,7 @@
         (setq error-flag t)
         (warning-message 1 "torque limitation ~A~%" torque_sensor_observer::*error-vector*)))
       (cond
-       ((and error-flag (not never-stop?))
+       ((and (minusp (decf min-cnt)) error-flag (not never-stop?))
         (warning-message 1 "revert in ~A msec~%" sleep-time)
         (send *robot* :angle-vector av1)
         (send *viewer* :draw-objects)
@@ -193,7 +199,7 @@
   error-flag)
 
 (defun demo-seating-proc
-  (&optional (mu 0.2))
+  (&optional (mu 0.2) (mu-buf (float-vector 0)))
   (cond
    ((not (and (boundp '*ri*) *ri*))
     (warning-message 1 "initalize robot-interface~%")
@@ -216,7 +222,8 @@
                                 ;;               (max 1e-3 (abs (aref (send slide? :contact-forces :rleg) 2))))
                                 ;;            (/ (abs (aref (send slide? :contact-forces :lleg) 0))
                                 ;;               (max 1e-3 (abs (aref (send slide? :contact-forces :lleg) 2)))))))
-                                :hip-error-thre (* mu 0.8)
+                                :hip-error-thre mu
+                                :mu-buf mu-buf
                                 )
                 (return-from demo-seating-proc slide?)))
         ;;
@@ -227,7 +234,8 @@
                             :av3 (copy-seq (send rsd :angle-vector))
                             :sleep-time 5000
                             :never-stop? t
-                            :hip-error-thre (* mu 0.8)
+                            :hip-error-thre mu
+                            :mu-buf mu-buf
                             ;; :off-error-thre
                             ;; (max 0.1
                             ;;      (* 0.5 1.5
@@ -276,35 +284,39 @@
 ;; (setq torque_sensor_observer::*torque-constraint-rate* -0.7)
 (defvar *rsd-list*)
 (defun demo-seating
-  (&key (rsd nil) (rsd-list *rsd*))
+  (&key (rsd nil) (rsd-list *rsd*) (mu-buf (float-vector 0)))
   (setq *rsd-list* nil)
-  (dolist (u-rate '(1 5 10 20))
+  (dolist (u-rate '(1 2 4 8 16 32 62)) ;; 10 25))
     (warning-message 1 " -- gen rsd, U-RATE: ~A~%" u-rate)
-    (setq rsd-list (or rsd-list
-                       (progn
-                         (apply 'test-proc :u-rate u-rate (if rsd (list :init rsd) nil))
-                         *rsd*)))
-    (setq rsd-list (rsd-union rsd-list))
-    (push rsd-list *rsd-list*)
     (cond
-     ((not (find :loop-exeeded rsd-list))
-      (warning-message 1 " -- abort: no anster~%")
-      (return-from demo-seating nil)))
-    ;;
-    (setq rsd (demo-seating-proc (* u-rate 0.2)))
-    (cond
-     ((eq rsd t)
-      (warning-message 1 " -- success!~%")
-      (return-from demo-seating t))
-     ((and (class rsd) (subclassp (class rsd) robot-state-data2))
-      (send rsd :buf :slide nil)
-      'next)
-     (t (warning-message 1 " -- invalid return statement ~A~%" rsd)
-        (return-from demo-seating rsd)
-        )
-     )
-    (setq rsd-list nil)
-    ))
+     ((> (aref mu-buf 0) (* u-rate 0.2))
+      (warning-message 1 " -- skip mu=~A < ~A~%" (* u-rate 0.2) (aref mu-buf 0)))
+     (t
+      (setq rsd-list (or rsd-list
+                         (progn
+                           (apply 'test-proc :u-rate u-rate (if rsd (list :init rsd) nil))
+                           *rsd*)))
+      (setq rsd-list (rsd-union rsd-list))
+      (push rsd-list *rsd-list*)
+      (cond
+       ((not (find :loop-exeeded rsd-list))
+        (warning-message 1 " -- abort: no anster~%")
+        (return-from demo-seating nil)))
+      ;;
+      (setq rsd (demo-seating-proc (* u-rate 0.2) mu-buf))
+      (cond
+       ((eq rsd t)
+        (warning-message 1 " -- success!~%")
+        (return-from demo-seating t))
+       ((and (class rsd) (subclassp (class rsd) robot-state-data2))
+        (send rsd :buf :slide nil)
+        'next)
+       (t (warning-message 1 " -- invalid return statement ~A~%" rsd)
+          (return-from demo-seating rsd)
+          )
+       )
+      (setq rsd-list nil)
+      ))))
 
 ;;init
 
