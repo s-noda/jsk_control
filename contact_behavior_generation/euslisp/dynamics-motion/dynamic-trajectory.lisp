@@ -3,7 +3,7 @@
 ;; #-:rbrain-basic (rbrain)
 
 (defvar *robot-type* :hrp2jsk)
-(require "my-util.lisp")
+(require "../my-util.lisp")
 (require "../robot-state-data2.lisp")
 (require "../optimize-brli.lisp")
 (require "../util/spline.lisp")
