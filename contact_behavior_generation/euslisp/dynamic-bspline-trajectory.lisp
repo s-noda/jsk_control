@@ -840,6 +840,9 @@
 	  ;;
 	  force-gradient-param
 	  descrete-constraints-sep
+	  ;;
+	  extra-equality-matrix ;; for slide motion
+	  extra-equality-vector
 	  ))
 (defmethod partition-spline-contact-wrench-trajectory
   (:init
@@ -1378,6 +1381,7 @@
 		       :contact-constraints
 		       (remove-if #'caddr constraints))))
 	 contact-time-list contact-constraints-list)
+	extra-equality-matrix
 	))
       '(1 0))
      :equality-vector
@@ -1412,7 +1416,10 @@
 			;;(cons float-vector
 			;;(mapcar #'cadr constraints)))
 			:tm-list tm-list)))
-	  contact-time-list contact-constraints-list)))))
+	  contact-time-list contact-constraints-list)
+	 ;;
+	 extra-equality-vector
+	 ))))
      :inequality-matrix
      (matrix-append
       (flatten
