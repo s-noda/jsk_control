@@ -162,8 +162,7 @@
            (hip_fmin
             ;; (apply 'max (map cons 'abs (or hip_sensor_observer::*error-vector* '(0))))
             (if hip_sensor_observer::*error-vector*
-                (/ (abs (aref hip_sensor_observer::*error-vector* 0))
-                   (max 1e-3 (abs (aref hip_sensor_observer::*error-vector* 2)))) 0))
+                (abs (aref hip_sensor_observer::*error-vector* 0)) 0))
            )
       (cond
        ((> hip_fmin hip-error-thre)
