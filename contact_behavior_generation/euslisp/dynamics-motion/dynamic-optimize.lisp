@@ -46,7 +46,7 @@
     (start-av (progn
 		(send *robot* :reset-pose)
 		(send *robot* :fix-leg-to-coords (make-coords))
-		(send *pickview* :look-all)
+		;; (send *pickview* :look-all)
 		(copy-object (send *robot* :angle-vector))))
     (start-base-coords
      (copy-seq
@@ -339,7 +339,7 @@
   (cond
    ((not
      (and (boundp '*viewer*) *viewer*))
-    (pickview :no-menu t)
+    ;; (pickview :no-menu t)
     (objects (list *robot*))))
   (send (instance dynamic-optimize :init :debug? nil)
 	:optimize))
