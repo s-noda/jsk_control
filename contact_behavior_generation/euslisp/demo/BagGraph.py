@@ -18,9 +18,9 @@ params = {'backend': 'ps',
           "figure.subplot.right": 0.95,
           "figure.subplot.top": 0.95,
           "figure.subplot.left": 0.05,
-          "figure.subplot.bottom": 0.1,
+          "figure.subplot.bottom": 0.15,
           ##'text.usetex': True,
-          'figure.figsize': [13, 9]}
+          'figure.figsize': [8, 5]}
 pylab.rcParams.update(params)
 
 class BagGraph:
@@ -34,8 +34,10 @@ class BagGraph:
         self.ylabel_name = ''
         self.tmp_label_name=''
         self.title_name = self.inpath
-        self.start_time = None;
-        self.end_time = None;
+        self.start_time = None
+        self.end_time = None
+        self.plot_opt = None
+        self.time_step = 0
         print ""
         print inpath + " loading ..."
         ##try:
@@ -62,6 +64,8 @@ class BagGraph:
         self.topics = []
         self.members = []
         self.ids = []
+        self.plot_opt = None
+        self.time_step = 0
         print "[options]"
         for i in range(start,len(argv)):
             target = argv[i]
@@ -84,6 +88,18 @@ class BagGraph:
                     self.end_time = rospy.Time(float(argv[i]))
                 except ValueError:
                     self.end_time = None
+            elif ( mode == 'r' ):
+                print "   " + "time_step = " + argv[i]
+                try:
+                    self.time_step = float(argv[i])
+                except ValueError:
+                    self.time_step = 0
+            elif ( mode == 'p' ):
+                print "   " + "plot_opt = " + argv[i]
+                try:
+                    self.plot_opt = str(argv[i])
+                except ValueError:
+                    self.plot_opt = None
             elif ( mode == 'i' ):
                 print "   " + "inpath = " + argv[i]
                 self.inpath = argv[i]
@@ -124,11 +140,15 @@ class BagGraph:
         self.val_buf = []
         self.label_buf = []
         first = True
+        prev_time = 0
         for i in range(max(len(self.topics), len(self.members), 1)):
             self.val_buf.append([])
             self.time_buf.append([])
             self.label_buf.append([])
         for topic, msg_raw, t in self.bag.read_messages(topics=self.topics, raw=False, start_time=self.start_time, end_time=self.end_time):
+            if ( t.to_sec() - prev_time < self.time_step ):
+                continue
+            prev_time = t.to_sec()
             members_cnt = -1
             while True:
                 label_name = ""
@@ -164,7 +184,8 @@ class BagGraph:
                             self.label_buf[members_cnt].append(self.tmp_label_name)
                             self.tmp_label_name = ''
                         else:
-                            self.label_buf[members_cnt].append(label_name + "[" + str(i) + "]")
+                            ## self.label_buf[members_cnt].append(label_name + "[" + str(i) + "]")
+                            self.label_buf[members_cnt].append(None)
                         self.val_buf[members_cnt].append([msg[i]])
                 else:
                     tmp_id = 0
@@ -197,7 +218,7 @@ class BagGraph:
         self.ax.spines['left'].set_position(('data',event.xdata))
         ylabel(str(self.ylabel_name))
         ## lgd = self.ax.legend(loc="upper left", bbox_to_anchor=(1.01,1.0))
-        lgd = self.ax.legend(prop={'size' : 20})
+        lgd = self.ax.legend(loc="upper left", prop={'size' : 20})
         self.fig.show()
         for topic, msg_raw, t2 in self.bag.read_messages(topics=self.topics, raw=False, start_time=rospy.Time(event.xdata-0.001), end_time=rospy.Time(event.xdata+0.001)):
             print str(topic) + "=" + str(msg_raw)
@@ -224,12 +245,15 @@ class BagGraph:
         print "f> draw_graph"
         for i in range(len(self.val_buf)):
             for j in range(len(self.val_buf[i])):
-                self.ax.plot(self.time_buf[i], self.val_buf[i][j], label=self.label_buf[i][j])
+                if self.plot_opt:
+                    self.ax.plot(self.time_buf[i], self.val_buf[i][j], self.plot_opt, label=self.label_buf[i][j])
+                else:
+                    self.ax.plot(self.time_buf[i], self.val_buf[i][j], label=self.label_buf[i][j])
         title(str(self.title_name))
         xlabel('time [sec]', fontsize=20)
         ylabel(str(self.ylabel_name) , fontsize=20)
         ## lgd = self.ax.legend(loc="upper left", bbox_to_anchor=(1.01,1.0))
-        lgd = self.ax.legend(prop={'size' : 20})
+        lgd = self.ax.legend(loc="upper left", prop={'size' : 20})
         self.fig.show()
         cid = self.fig.canvas.mpl_connect('button_press_event', self.onclick)
 
