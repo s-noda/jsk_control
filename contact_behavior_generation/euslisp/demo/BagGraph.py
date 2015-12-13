@@ -15,10 +15,10 @@ params = {'backend': 'ps',
           'legend.fontsize': 20,
           'xtick.labelsize': 15,
           'ytick.labelsize': 15,
-          "figure.subplot.right": 0.8,
+          "figure.subplot.right": 0.95,
           "figure.subplot.top": 0.95,
           "figure.subplot.left": 0.05,
-          "figure.subplot.bottom": 0.05,
+          "figure.subplot.bottom": 0.1,
           ##'text.usetex': True,
           'figure.figsize': [13, 9]}
 pylab.rcParams.update(params)
@@ -34,6 +34,8 @@ class BagGraph:
         self.ylabel_name = ''
         self.tmp_label_name=''
         self.title_name = self.inpath
+        self.start_time = None;
+        self.end_time = None;
         print ""
         print inpath + " loading ..."
         ##try:
@@ -70,6 +72,12 @@ class BagGraph:
                 mode = argv[i][1]
             elif ( mode == 'w' ):
                 print "   " + "skip " + argv[i]
+            elif ( mode == 's' ):
+                print "   " + "start_time = " + argv[i]
+                self.start_time = rospy.Time(float(argv[i]))
+            elif ( mode == 'e' ):
+                print "   " + "end_time = " + argv[i]
+                self.end_time = rospy.Time(float(argv[i]))
             elif ( mode == 'i' ):
                 print "   " + "inpath = " + argv[i]
                 self.inpath = argv[i]
@@ -114,7 +122,7 @@ class BagGraph:
             self.val_buf.append([])
             self.time_buf.append([])
             self.label_buf.append([])
-        for topic, msg_raw, t in self.bag.read_messages(topics=self.topics, raw=False):
+        for topic, msg_raw, t in self.bag.read_messages(topics=self.topics, raw=False, start_time=self.start_time, end_time=self.end_time):
             members_cnt = -1
             while True:
                 label_name = ""
