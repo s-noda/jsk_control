@@ -26,7 +26,7 @@
 	       (list
 		(cons :link (send self k :end-coords :parent))
 		(cons :worldcoords
-		      (copy-object (send self k :end-coords :worldcoords)))
+		      (send (send self k :end-coords :worldcoords) :copy-worldcoords))
 		(cons :ext-force (float-vector 0 0 0))
 		(cons :ext-moment (float-vector 0 0 0))))
 	   '(:rarm :larm :rleg :lleg)))
@@ -136,8 +136,9 @@
 	  (cons :m0 #F(0 0 0))
 	  (cons :link (send robot k :end-coords :parent))
 	  (cons :worldcoords
-		(copy-object
-		 (send robot k :end-coords :worldcoords)))))
+		(send
+		 (send robot k :end-coords :worldcoords)
+		 :copy-worldcoords))))
      '(:rleg :lleg)))
    (root-angular-velocity #F(0 0 0))
    (root-spacial-velocity #F(0 0 0))
@@ -282,8 +283,9 @@
 	  (cons :m0 #F(0 0 0))
 	  (cons :link (send robot k :end-coords :parent))
 	  (cons :worldcoords
-		(copy-object
-		 (send robot k :end-coords :worldcoords)))))
+		(send
+		 (send robot k :end-coords :worldcoords)
+		 :copy-worldcoords))))
      '(:rleg :lleg)))
    (root-angular-velocity #F(0 0 0))
    (root-spacial-velocity #F(0 0 0))
