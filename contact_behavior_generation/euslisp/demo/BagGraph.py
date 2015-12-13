@@ -74,10 +74,16 @@ class BagGraph:
                 print "   " + "skip " + argv[i]
             elif ( mode == 's' ):
                 print "   " + "start_time = " + argv[i]
-                self.start_time = rospy.Time(float(argv[i]))
+                try:
+                    self.start_time = rospy.Time(float(argv[i]))
+                except ValueError:
+                    self.start_time = None
             elif ( mode == 'e' ):
                 print "   " + "end_time = " + argv[i]
-                self.end_time = rospy.Time(float(argv[i]))
+                try:
+                    self.end_time = rospy.Time(float(argv[i]))
+                except ValueError:
+                    self.end_time = None
             elif ( mode == 'i' ):
                 print "   " + "inpath = " + argv[i]
                 self.inpath = argv[i]
