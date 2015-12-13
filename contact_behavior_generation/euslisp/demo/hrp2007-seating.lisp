@@ -19,6 +19,117 @@
 (defvar *rsd-play* (function rsd-play))
 (defun rsd-play (&rest args) (apply *rsd-play* :rsd-list *rsd* :graph nil args))
 
+(defun gen-linear-interpolate-trajectory
+  (&key
+   (robot *robot*)
+   (root-link (car (send *robot* :links)))
+   (now (nth 3 *rsd*))
+   (nxt (nth 2 *rsd*))
+   (now-t (or (send now :buf :time) 0.0))
+   (nxt-t (or (send nxt :buf :time) 5.0))
+   (fix-coords
+    (send (find-if #'(lambda (cs) (not (eq (send cs :name)
+					   (send now :buf :remove-limb))))
+		   (send now :contact-states))
+	  :contact-coords))
+   (freq 30)
+   (position-list nil)
+   (coords-list nil)
+   (time-list nil)
+   ret)
+  (send now :draw :friction-cone? nil :torque-draw? nil)
+  (send-all (send robot :links) :worldcoords)
+  (let* ((c (send fix-coords :copy-worldcoords))
+	 (total (* freq (- nxt-t now-t)))
+	 (rate 0))
+    (dotimes (i (+ 1 total))
+      (setq rate (/ (* 1.0 i) total))
+      (push (v+ (scale rate (send nxt :angle-vector))
+		(scale (- 1 rate) (send now :angle-vector)))
+	    position-list)
+      (send robot :angle-vector (copy-seq (car position-list)))
+      (send-all (send robot :links) :worldcoords)
+      ;;
+      (while (> (norm (send fix-coords :difference-position c)) 1)
+	(send robot :transform
+	      (send (send fix-coords :copy-worldcoords)
+		    :transformation
+		    (send c :copy-worldcoords))
+	      :local))
+      ;;
+      ;; (let (support-coords tmp-coords move-coords pos rot ra)
+      ;; 	(setq support-coords (send c :copy-worldcoords))
+      ;; 	(setq tmp-coords (send fix-coords :copy-worldcoords))
+      ;; 	(setq move-coords (send support-coords :transformation robot))
+      ;; 	(send tmp-coords :transform move-coords :local)
+      ;; 	(send robot :newcoords tmp-coords)
+      ;; 	(send robot :worldcoords))
+      ;;
+      (push (send root-link :copy-worldcoords) coords-list)
+      (push (+ (* rate (- nxt-t now-t)) now-t) time-list)
+      ;; (send *viewer* :draw-objects)
+      ;; (unix::usleep (* 100 1000))
+      )
+    (setq ret
+	  (gen-dynamic-trajectory
+	   :freq freq :position-list (reverse position-list)
+	   :coords-list (reverse coords-list) :fix-length t))
+    (mapcar #'(lambda (traj tm) (send traj :put :time tm))
+            ret (reverse time-list))
+    ret))
+
+(defun slide-trajectory-check-func
+  (&optional
+   (now (nth 3 *rsd*))
+   (nxt (nth 2 *rsd*))
+   &rest args)
+  (cond
+   ((not (and (send now :buf :slide)
+	      (send nxt :buf :slide)))
+    t)
+   (t
+    (send now :buf :time 0)
+    (send nxt :buf :time 5)
+    (let* ((bspline
+	    (instance* partition-spline-contact-wrench-trajectory :init
+		       :rsd-list (list now nxt)
+		       :freq 4
+		       :trajectory-elem-list
+		       (gen-linear-interpolate-trajectory
+			:now now :nxt nxt :freq 4)
+		       ;;
+		       nil
+		       ))
+	   ;;
+	   (slide-opt (slide-friction-condition-extra-args
+		       :contact-states (send now :contact-states)
+		       :from (send now :contact-states
+				   (send now :buf :remove-limb))
+		       :to (send nxt :contact-states
+				 (send nxt :buf :remove-limb)))))
+      (send bspline :set-val 'extra-equality-matrix
+	    (send bspline
+		  :calc-coeff-matrix-for-gain-vector
+		  (cadr (member :extra-equality-matrix slide-opt))
+		  :tm-list (car (send bspline :contact-time-list))
+		  :dim-list (send bspline :force-range)))
+      (send bspline :set-val 'extra-equality-vector
+	    (send bspline :constant-vector
+		  (cadr (member :extra-equality-vector slide-opt))
+		  :tm-list (car (send bspline :contact-time-list))))
+      (cond
+       ((and (send* bspline :optimize nil)
+	     (send bspline :get :optimize-result)
+	     (send bspline :get :optimize-success))
+	;; (mapcar
+	;; '(lambda (name min max)
+	;; (send bspline :gen-graph :name (format nil "~A-force" name)
+	;; :dim-list (subseq (send bspline :force-range) min max)))
+	;; (send bspline :contact-name-list) '(0 6 12) '(6 12 18))
+	t
+	)
+       (t (warning-message 1 "optimization failed~%") nil))))))
+
 ;; test-proc
 ;; test-proc :u-rate 2.0 :init (nth 5 (reverse *rsd*))
 (setq  *kca-cog-gain* 1)
@@ -81,6 +192,9 @@
                  init
                  :tmax-hand-rate 1.0
                  :tmax-leg-rate 1.0
+		 ;;
+		 :trajectory-check-func
+		 'slide-trajectory-check-func
                  :log-file (format nil "~A/four-leg-seat-u~A" *log-root* u)
                  )))
       (setq *rsd* rsd)
@@ -354,47 +468,46 @@
 
 #|
 
-(defun demo-seating-old
-  nil
-  (cond
-   ((not (and (boundp '*ri*) *ri*))
-    (warning-message 1 "initalize robot-interface~%")
-    (require "package://hrpsys_ros_bridge_tutorials/euslisp/hrp2jsk-interface.l")
-    (hrp2jsk-init)))
-  ;; init
-  (send (nth 1 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
-  (warning-message 1 "intial pose?~%") (read-line)
-  (model2real)
-  ;; seating
-  (send (nth 2 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
-  (warning-message 1 "seating?~%") (read-line)
-  (model2real :sleep-time 5000)
-  ;; suspend
-  (send (nth 4 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
-  (warning-message 1 "suspend?~%") (read-line)
-  (model2real :sleep-time 5000)
-  ;; slide before
-  (send (nth 5 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
-  (warning-message 1 "slide before?~%") (read-line)
-  (model2real :sleep-time 5000)
-  ;; slide a little
-  (warning-message 1 "slide a little?~%") (read-line)
-  (if (slide-a-little (copy-seq (send (nth 5 (reverse *rsd*)) :angle-vector))
-                      (copy-seq (send (nth 6 (reverse *rsd*)) :angle-vector)))
-      (return-from demo-seating nil))
-  ;; slide
-  (send (nth 6 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
-  (warning-message 1 "slide?~%") (read-line)
-  (model2real :sleep-time 10000)
-  ;; last
-  (send (nth 7 (reverse *rsd*)) :draw :friction-cone? nil :torque-draw? nil)
-  (let* ((rleg (copy-seq (send *robot* :rleg :angle-vector)))
-         (lleg (copy-seq (send *robot* :lleg :angle-vector))))
-    (send *robot* :reset-pose)
-    (send *robot* :arms :elbow-p :joint-angle -90)
-    (send *robot* :rleg :angle-vector rleg)
-    (send *robot* :lleg :angle-vector lleg)
-    (send *viewer* :draw-objects))
-  (warning-message 1 "last?~%") (read-line)
-  (model2real :sleep-time 5000)
+(setq now (nth 3 *rsd*))
+(setq nxt (nth 2 *rsd*))
+(send now :buf :time 0)
+(send nxt :buf :time 5)
+(setq bspline
+      (instance* partition-spline-contact-wrench-trajectory :init
+		 :rsd-list (list now nxt)
+		 :freq 4
+		 :trajectory-elem-list
+		 (gen-linear-interpolate-trajectory
+		  :now now :nxt nxt :freq 4)
+		 ;;
+		 nil
+		 ))
+;;
+(setq slide-opt (slide-friction-condition-extra-args
+		 :contact-states (send now :contact-states)
+		 :from (send now :contact-states
+			     (send now :buf :remove-limb))
+		 :to (send nxt :contact-states
+			   (send nxt :buf :remove-limb))))
+(send bspline :set-val 'extra-equality-matrix
+      (send bspline
+	    :calc-coeff-matrix-for-gain-vector
+	    (cadr (member :extra-equality-matrix slide-opt))
+	    :tm-list (car (send bspline :contact-time-list))
+	    :dim-list (send bspline :force-range)))
+(send bspline :set-val 'extra-equality-vector
+      (send bspline :constant-vector
+	    (cadr (member :extra-equality-vector slide-opt))
+	    :tm-list (car (send bspline :contact-time-list))))
+(cond
+ ((and (send* bspline :optimize nil)
+       (send bspline :get :optimize-result)
+       (send bspline :get :optimize-success))
+  (mapcar
+   '(lambda (name min max)
+      (send bspline :gen-graph :name (format nil "~A-force" name)
+	    :dim-list (subseq (send bspline :force-range) min max)))
+   (send bspline :contact-name-list) '(0 6 12) '(6 12 18))
   )
+ (t (warning-message 1 "optimization failed~%") nil))
+
