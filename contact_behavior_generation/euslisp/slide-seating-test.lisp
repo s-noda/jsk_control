@@ -122,3 +122,16 @@
 (draw-id :ids (nth 1 *reachable-contact-state-ids*) :color (float-vector 0 0 1) :size 28)
 (draw-id :ids (nth 0 *reachable-contact-state-ids*) :color (float-vector 1 0 0) :size 15)
 ;; (draw-id :ids (apply 'intersection *reachable-contact-state-ids*) :color (float-vector 1 1 0))
+
+#|
+
+(send *irtviewer* :objects (list *robot* *climb-obj*))
+(send *viewer* :draw-objects)
+(send-all (send-all *contact-states* :target-coords) :draw-on
+	  :flush nil :color (float-vector 0 1 0) :size 70 :width 3)
+(send-all (list (send *robot* :get :hip-end-coords)
+		(send (nth 21 *contact-states*) :target-coords)
+	   )
+	  :draw-on :flush nil :color (float-vector 1 0 0) :size 120 :width 6)
+(send *viewer* :viewsurface :flush)
+(send *viewer* :viewsurface :write-to-image-file "contact-candidates.png")
