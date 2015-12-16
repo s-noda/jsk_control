@@ -96,8 +96,8 @@
 				  ;; (send rsd :f/fmax)
 				  ))
 		       (cdr *rsd1*))))
-       (max2 (apply 'max cost2))
-       (max1 (apply 'max cost1))
+       (max2 (apply 'max (butlast cost2 3)))
+       (max1 (apply 'max (butlast cost1 3)))
        (pos2 (position max2 (reverse cost2)))
        (pos1 (position max1 (reverse cost1)))
        (mid2 (nth (/ (length cost2) 2) (sort cost2 '<)))
@@ -116,18 +116,19 @@
   (send *viewer* :viewsurface :write-to-image-file
 	"worst_posture_without_swithing.jpg")
   ;;
-  (send (nth pos2 (reverse *rsd1*)) :draw :rest (list *climb-obj*) :torque-draw? nil)
+  (send (nth pos1 (reverse *rsd1*)) :draw :rest (list *climb-obj*) :torque-draw? nil)
   (send *viewer* :viewsurface :color (float-vector 0 0 0))
   (send *viewer* :viewsurface :string
 	10 (- (- (send *viewer* :viewsurface :height) 10) (text-height "a"))
 	(format nil "Slide Left Leg"))
   (send *viewer* :viewsurface :string
 	10 (- (send *viewer* :viewsurface :height) 10)
-	(format nil "maxTorqueRate=~A" (subseq (format nil "~A" (apply 'max (apply 'concatenate (flatten (cons cons (send (nth pos2 (reverse *rsd1*)) :t/tmax)))))) 0 5)))
+	(format nil "maxTorqueRate=~A" (subseq (format nil "~A" (apply 'max (apply 'concatenate (flatten (cons cons (send (nth pos1 (reverse *rsd1*)) :t/tmax)))))) 0 5)))
   (send *viewer* :viewsurface :flush)
   (send *viewer* :viewsurface :write-to-image-file
 	"worst_posture_with_swithing.jpg")
   ;;
+  (warning-message 1 "walk vs slide~%")
   (format t "max: ~A at ~A vs ~A at ~A~%" max2 pos2 max1 pos1)
   (format t "len: ~A  vs ~A~%" (length cost2) (length cost1))
   (format t "mid: ~A  vs ~A~%" mid2 mid1)
@@ -135,3 +136,18 @@
 	  (/ (apply '+ cost2) (length cost2))
 	  (/ (apply '+ cost1) (length cost1)))
   )
+
+#|
+
+(send-all (send *climb-obj* :bodies) :set-color (float-vector 0.9 0.9 0.9))
+(send *irtviewer* :objects (list *robot* *climb-obj*))
+(send *best-facefall* :draw :friction-cone? nil)
+(send *viewer* :draw-objects)
+(send-all (send-all *contact-states* :target-coords) :draw-on
+	  :flush nil :color (float-vector 0 1 0) :size 100 :width 5)
+(send-all (append (list (send *robot* :get :larm-simple-floor-end-coords)
+			(send *robot* :get :rarm-simple-floor-end-coords))
+		  (send *robot* :legs :end-coords))
+	  :draw-on :flush nil :color (float-vector 1 0 0) :size 300 :width 10)
+(send *viewer* :viewsurface :flush)
+(send *viewer* :viewsurface :write-to-image-file "contact-candidates.png")
