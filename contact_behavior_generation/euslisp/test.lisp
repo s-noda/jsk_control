@@ -4,8 +4,9 @@
 (require "motion-sequencer.lisp")
 (require "dynamic-connector.lisp")
 
-(require "motion-planners/motion-planner.lisp") (defun demo-motion-sequence (&rest args) (let* ((ret (apply 'demo-motion-sequence2 (append args (list :error-thre 1.1))))) (cons (car ret) (reverse (cdr ret)))))
+(require "motion-planners/motion-planner.lisp") (defun demo-motion-sequence (&rest args) (send-all (send *robot* :links) :set-val 'analysis-level :coords) (let* ((ret (apply 'demo-motion-sequence2 (append args (list :error-thre 1.1))))) (cons (car ret) (reverse (cdr ret)))))
 
+(defvar *rsd-play-graph?* t)
 (defun test-proc
   (key)
   (case key
@@ -38,7 +39,8 @@
 		    )))
 	 (cond
 	  ((listp rsd)
-	   (rsd-play :file (format nil "~A/kirin-ladder.rsd" *log-root*) :auto? t)
+	   (apply 'rsd-play :file (format nil "~A/kirin-ladder.rsd" *log-root*)
+		  :auto? t (if *rsd-play-graph?* nil (list :graph *rsd-play-graph?*)))
 	   (quit-graph)))
 	 (atom rsd))
        (print 'kirin-ladder-error)
@@ -55,7 +57,8 @@
 		    )))
 	 (cond
 	  ((listp rsd)
-	   (rsd-play :file (format nil "~A/rock-wall.rsd" *log-root*) :auto? t)
+	   (apply 'rsd-play :file (format nil "~A/rock-wall.rsd" *log-root*)
+		  :auto? t (if *rsd-play-graph?* nil (list :graph *rsd-play-graph?*)))
 	   (quit-graph)))
 	 (atom rsd))
        (print 'rock-wall-error)
@@ -89,7 +92,8 @@
 		    )))
 	 (cond
 	  ((listp rsd)
-	   (rsd-play :file (format nil "~A/four-leg-seat.rsd" *log-root*) :auto? t)
+	   (apply 'rsd-play :file (format nil "~A/four-leg-seat.rsd" *log-root*)
+		  :auto? t (if *rsd-play-graph?* nil (list :graph *rsd-play-graph?*)))
 	   (quit-graph)))
 	 (atom rsd))
        (print 'four-leg-seat-error)
@@ -138,7 +142,8 @@
 	 (cond
 	  ((and (listp rsd)
 		(find-if '(lambda (rsd) (subclassp (class rsd) robot-state-data2)) rsd))
-	   (rsd-play :file (format nil "~A/simple-floor.rsd" *log-root*) :auto? t)
+	   (apply 'rsd-play :file (format nil "~A/simple-floor.rsd" *log-root*)
+		  :auto? t (if *rsd-play-graph?* nil (list :graph *rsd-play-graph?*)))
 	   (quit-graph)
 	   ))
 	 (atom rsd))
@@ -152,6 +157,8 @@
 (defvar *log-root* (format nil "log/~A" (log-surfix)))
 (defvar *ik-debug-view* nil) ;;:no-message)
 (unix:system (format nil "mkdir ~A" *log-root*))
+
+;; (defun connect-rsd (&rest args &key (rsd-list) &allow-other-keys) (send-all rsd-list :buf :trajectory t) t) (setq *rsd-play-graph?* nil) (defun quit-graph (&rest args))
 
 (if (or
      (test-proc :kirin-ladder)
