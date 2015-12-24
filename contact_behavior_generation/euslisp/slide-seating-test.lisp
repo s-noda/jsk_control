@@ -118,20 +118,23 @@
     (send *viewer* :viewsurface :flush)))
 
 (send *viewer* :draw-objects)
-(draw-id :color (float-vector 0 1 0) :size 40)
-(draw-id :ids (nth 1 *reachable-contact-state-ids*) :color (float-vector 0 0 1) :size 28)
-(draw-id :ids (nth 0 *reachable-contact-state-ids*) :color (float-vector 1 0 0) :size 15)
+(draw-id :color (float-vector 0.5 0.5 0.5) :size 40)
+(draw-id :ids (nth 1 *reachable-contact-state-ids*) :color (float-vector 0 0 0) :size 28)
+(draw-id :ids (nth 0 *reachable-contact-state-ids*) :color (float-vector 1 1 1) :size 15)
 ;; (draw-id :ids (apply 'intersection *reachable-contact-state-ids*) :color (float-vector 1 1 0))
 
 #|
 
+(send-all (send *robot* :bodies) :set-color (float-vector 0.8 0.8 0.8))
 (send *irtviewer* :objects (list *robot* *climb-obj*))
 (send *viewer* :draw-objects)
 (send-all (send-all *contact-states* :target-coords) :draw-on
-	  :flush nil :color (float-vector 0 1 0) :size 70 :width 3)
+	  :flush nil :color (float-vector 0.9 0.9 0.9) :size 70 :width 5)
 (send-all (list (send *robot* :get :hip-end-coords)
 		(send (nth 21 *contact-states*) :target-coords)
-	   )
-	  :draw-on :flush nil :color (float-vector 1 0 0) :size 120 :width 6)
+		)
+	  :draw-on :flush nil :color (float-vector 0 0 0) :size 220 :width 8)
 (send *viewer* :viewsurface :flush)
 (send *viewer* :viewsurface :write-to-image-file "contact-candidates.png")
+
+convert contact-candidates.png -type GrayScale gray_contact-candidates.png

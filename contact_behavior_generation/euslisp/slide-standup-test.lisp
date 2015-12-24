@@ -144,10 +144,12 @@
 (send *best-facefall* :draw :friction-cone? nil)
 (send *viewer* :draw-objects)
 (send-all (send-all *contact-states* :target-coords) :draw-on
-	  :flush nil :color (float-vector 0 1 0) :size 100 :width 5)
+	  :flush nil :color (float-vector 0.5 1 0.5) :size 130 :width 7)
 (send-all (append (list (send *robot* :get :larm-simple-floor-end-coords)
 			(send *robot* :get :rarm-simple-floor-end-coords))
 		  (send *robot* :legs :end-coords))
-	  :draw-on :flush nil :color (float-vector 1 0 0) :size 300 :width 10)
+	  :draw-on :flush nil :color (float-vector 1 1 1) :size 300 :width 10)
 (send *viewer* :viewsurface :flush)
 (send *viewer* :viewsurface :write-to-image-file "contact-candidates.png")
+
+convert contact-candidates.png -type GrayScale gray_contact-candidates.png
