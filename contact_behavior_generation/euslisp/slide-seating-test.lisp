@@ -122,8 +122,11 @@
 (draw-id :ids (nth 1 *reachable-contact-state-ids*) :color (float-vector 0 0 0) :size 28)
 (draw-id :ids (nth 0 *reachable-contact-state-ids*) :color (float-vector 1 1 1) :size 15)
 ;; (draw-id :ids (apply 'intersection *reachable-contact-state-ids*) :color (float-vector 1 1 0))
+;; (setq *reachable-contact-state-ids* '((26 25 20 19 15 14) (30 28 27 26 25 22 21 20 19 17 16 15 14 9)))
 
 #|
+(send *viewer* :viewsurface :write-to-image-file "hip_reachable_map.jpg")
+(unix::system "convert hip_reachable_map.png -type GrayScale gray_hip_reachable_map.jpg")
 
 (send-all (send *robot* :bodies) :set-color (float-vector 0.8 0.8 0.8))
 (send *irtviewer* :objects (list *robot* *climb-obj*))
@@ -137,4 +140,4 @@
 (send *viewer* :viewsurface :flush)
 (send *viewer* :viewsurface :write-to-image-file "contact-candidates.png")
 
-convert contact-candidates.png -type GrayScale gray_contact-candidates.png
+(convert contact-candidates.png -type GrayScale gray_contact-candidates.png)
