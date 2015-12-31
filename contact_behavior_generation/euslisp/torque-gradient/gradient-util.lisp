@@ -744,19 +744,19 @@
    (target-joint (nth (random (length all-joint-list)) all-joint-list))
    ;;
    (6dof? t)
-   (inertia-move-target
-    (progn
-      (inertia-move-target (cons root-link all-link-list))
-      (append
-       (send-all (send-all all-joint-list :child-link) :get :inertia-move-target)
-       (if 6dof?
-	   (make-list
-	    6 :initial-element
-	    (send root-link :get :inertia-move-target))))))
-   (weight-rate-list
-    (append
-     (send-all (send-all all-joint-list :child-link) :get :weight-rate)
-     (if 6dof? (list 1 1 1 1 1 1))))
+   ;; (inertia-move-target
+   ;;  (progn
+   ;;    (inertia-move-target (cons root-link all-link-list))
+   ;;    (append
+   ;;     (send-all (send-all all-joint-list :child-link) :get :inertia-move-target)
+   ;;     (if 6dof?
+   ;; 	   (make-list
+   ;; 	    6 :initial-element
+   ;; 	    (send root-link :get :inertia-move-target))))))
+   ;; (weight-rate-list
+   ;;  (append
+   ;;   (send-all (send-all all-joint-list :child-link) :get :weight-rate)
+   ;;   (if 6dof? (list 1 1 1 1 1 1))))
    ;;
    (meter? t)
    (debug? t)
@@ -786,7 +786,8 @@
 		   ((and (list j2) (find root-link j2))
 		    root-link)))
 	    (scale
-	     1;;(send l :get :weight-rate)
+	     1 ;;(send l :get :weight-rate)
+	     ;; (* 1e-3 (send l :get :m-til)) ;; this weight move to matrix calc
 	     (apply #'gradientx2-vector
 		    (append (list :move-target
 				  (send l :get :inertia-move-target)
