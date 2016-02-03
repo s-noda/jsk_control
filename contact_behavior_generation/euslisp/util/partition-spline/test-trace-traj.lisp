@@ -161,7 +161,8 @@
    (dif (/ tm 2))
    (min-dif 5)
    (tm-org tm)
-   traj traj-buf)
+   traj traj-buf
+   &allow-other-keys)
   (while t
     (setq traj (apply 'trace-trajectory :tm tm args))
     (push traj traj-buf)
@@ -234,6 +235,11 @@
   (v-
    (print (scale (/ 1.0 (send *traj* :get :fastest-time)) (send *traj* :calc-delta 1.0 :n 1)))
    (print (send *ref-traj* :calc-delta (send *traj* :get :fastest-time) :n 1))))
+
+(defun test-random-time-animation
+  nil
+  (if (trace-trajectory :tm (print (random (send *ref-traj* :x-max))))
+      (draw-trajectory)))
 
 
 #|
