@@ -241,7 +241,5 @@
   (if (trace-trajectory :tm (print (random (send *ref-traj* :x-max))))
       (draw-trajectory)))
 
-
-#|
-(scale (/ 1.0 (send *traj* :get :fastest-time)) (send *traj* :calc-delta 1.0 :n 1))
-(send *ref-traj* :calc-delta (send *traj* :get :fastest-time) :n 1)
+(if (find-if #'(lambda (str) (string-equal "--run-test" str)) lisp::*eustop-argument*)
+    (do-until-key (test-random-time-animation)))
