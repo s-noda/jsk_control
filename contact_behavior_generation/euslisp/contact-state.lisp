@@ -134,17 +134,18 @@
    (&optional z)
    (or
     (setq z-rot z)
-    ;;(m*
-    ;;(send contact-coords :worldrot)
-    ;;(matrix-exponent
-    ;;(normalize-vector (v* (float-vector 0 0 1) contact-n))
-    ;;(acos (v. (float-vector 0 0 1) contact-n))))))
+    (m*
+     (send contact-coords :worldrot)
+     (matrix-exponent
+      (normalize-vector (v* (float-vector 0 0 1) contact-n))
+      (acos (v. (float-vector 0 0 1) contact-n))))
+    ;; here belows are crazy implementation?
     (let ((n (transform (send contact-coords :worldrot)
      			contact-n)))
-      ;;(transpose
       (matrix-exponent
        (normalize-vector (v* (float-vector 0 0 1) n))
-       (acos (v. (float-vector 0 0 1) n))))))
+       (acos (v. (float-vector 0 0 1) n))))
+    ))
   (:z-coords
    nil
    (make-coords :pos (send contact-coords :worldpos)
