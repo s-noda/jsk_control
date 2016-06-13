@@ -439,6 +439,8 @@
   ;;(print (send link :worldcoords))
   torque)
 
+;;
+;; (send-all (send *robot* :joint-list) :set-val 'joint-min-max-target nil)
 (defun test-calc-link-coords
   (&key
    (link (send *robot* :rarm :end-coords :parent))

@@ -15,12 +15,12 @@ set size ratio 0.5
 set xlabel "Joint DOF"
 set ylabel "Computation time [sec]"
 set title "_"
-set yrange [ 0.0 : 1.0 ]
+set yrange [ 0.0 : 0.5 ]
 set xrange [ 0.0 : 36.0 ]
 set mxtics 5
 set mytics 5
 set xtics 10
-set ytics 0.2
+set ytics 0.1
 set key spacing 4
 plot 'PseudoGradient(k=1)' with line linewidth 10, 'PseudoGradient(k=2)' with line linewidth 10, 'PseudoGradient(k=3)' with line linewidth 10, 'PseudoGradient(k=4)' with line linewidth 10, 'TorqueGradient(k=1)' with line linewidth 10, 'TorqueGradient(k=2)' with line linewidth 10, 'TorqueGradient(k=3)' with line linewidth 10, 'TorqueGradient(k=4)' with line linewidth 10
 EOF
@@ -40,12 +40,12 @@ set size ratio 0.5
 set xlabel "Joint DOF"
 set ylabel "Computation time [sec]"
 set title "_"
-set yrange [ 0.0 : 0.1 ]
-set xrange [ 1.0 : 10.0 ]
+set yrange [ 0.0 : 0.01 ]
+set xrange [ 1.0 : 5.0 ]
 set mxtics 5
 set mytics 5
-set xtics 10
-set ytics 0.02
+set xtics 1
+set ytics 0.001
 set key spacing 4
 plot 'PseudoGradient(k=1)' with line linewidth 10, 'PseudoGradient(k=2)' with line linewidth 10, 'PseudoGradient(k=3)' with line linewidth 10, 'PseudoGradient(k=4)' with line linewidth 10, 'TorqueGradient(k=1)' with line linewidth 10, 'TorqueGradient(k=2)' with line linewidth 10, 'TorqueGradient(k=3)' with line linewidth 10, 'TorqueGradient(k=4)' with line linewidth 10
 EOF
@@ -65,12 +65,12 @@ set size ratio 0.5
 set xlabel "Joint DOF"
 set ylabel "Computation time [sec]"
 set title "_"
-set yrange [ 0.0 : 0.05 ]
+set yrange [ 0.0 : 0.012 ]
 set xrange [ 1.0 : 36.0 ]
 set mxtics 5
 set mytics 5
 set xtics 10
-set ytics 0.01
+set ytics 0.002
 set key spacing 4
 plot 'PseudoGradient(k=1)' with line linewidth 10, 'PseudoGradient(k=2)' with line linewidth 10, 'PseudoGradient(k=3)' with line linewidth 10, 'PseudoGradient(k=4)' with line linewidth 10
 EOF
@@ -90,12 +90,12 @@ set size ratio 0.5
 set xlabel "Joint DOF"
 set ylabel "Computation time [sec]"
 set title "_"
-set yrange [ 0.0 : 1.0 ]
+set yrange [ 0.0 : 0.5 ]
 set xrange [ 1.0 : 36.0 ]
 set mxtics 5
 set mytics 5
 set xtics 10
-set ytics 0.2
+set ytics 0.1
 set key spacing 4
 plot 'TorqueGradient(k=1)' with line linewidth 10, 'TorqueGradient(k=2)' with line linewidth 10, 'TorqueGradient(k=3)' with line linewidth 10, 'TorqueGradient(k=4)' with line linewidth 10
 EOF

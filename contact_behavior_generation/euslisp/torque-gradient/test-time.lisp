@@ -192,6 +192,9 @@
 	)
       (close ptau) (close pf))))
 
+(defmethod FaceSet
+    (:update nil nil))
+
 (calc-grad-time-trial)
 (dump-time-values)
 (let* ((av (flatten (mapcar '(lambda (d) (cdr (assoc :average d)))
