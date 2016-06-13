@@ -418,11 +418,11 @@
 	     (union
 	      nil
 	      (append
-					;(send pv :objects)
 	       rest
 	       (list robot)
+	       (send-all contact-states :force-vector-object)
 	       (send-all contact-states :friction-cone-object)
-	       (send-all contact-states :force-vector-object)))))
+	       ))))
    (if pv (send pv :draw-objects))
    (send self :log :torque-draw? torque-draw?))
   (:clear
