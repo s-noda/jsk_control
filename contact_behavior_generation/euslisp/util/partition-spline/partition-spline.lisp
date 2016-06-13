@@ -493,7 +493,8 @@
     (send bspline :get-descrete-points
 	  :print-x-step print-x-step
 	  :print-tm print-tm
-	  :output-stream output-stream)))
+	  :output-stream output-stream)
+    ))
   bspline
   )
 
