@@ -241,7 +241,7 @@
 			;;(matrix-exponent
 			;;(normalize-vector (v* #F(0 0 1) contact-n))
 			;;(acos (v. #F(0 0 1) contact-n))))))
-     (send bod :set-color #F(1 0 0))
+     (send bod :set-color #F(0.6 1.0 0.6))
      (gl::transparent bod 0.5)
      (setq friction-cone-object bod))
    )
@@ -267,7 +267,7 @@
 	   (float-vector 0 0 (min max scale))
 	   :local)
      (setq bod (body+ hat stick))
-     (send bod :set-color #F(0 0 1))
+     (send bod :set-color #F(1.0 0.1 0.1))
      (setq force-vector-object bod)))
   (:difference-position
    nil
