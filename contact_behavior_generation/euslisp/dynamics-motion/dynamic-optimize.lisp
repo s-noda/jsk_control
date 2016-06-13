@@ -341,7 +341,7 @@
      (and (boundp '*viewer*) *viewer*))
     ;; (pickview :no-menu t)
     (objects (list *robot*))))
-  (send (instance dynamic-optimize :init :debug? nil)
+  (send (instance dynamic-optimize :init :algorithm SLSQP :debug? nil)
 	:optimize))
 
 ;; (demo-dynamic-optimize)
