@@ -40,6 +40,8 @@ class BagGraph:
         self.time_step = 0
         print ""
         print inpath + " loading ..."
+        ##
+        self.file_path = None
         ##try:
         self.bag = Bag(inpath)
         ##
@@ -61,6 +63,7 @@ class BagGraph:
         mode = 'w'
         prev_mode = mode
         members_cnt = -1
+        self.file_path = None
         self.topics = []
         self.members = []
         self.ids = []
@@ -68,7 +71,6 @@ class BagGraph:
         self.time_step = 0
         print "[options]"
         for i in range(start,len(argv)):
-            target = argv[i]
             if ( len(argv[i]) == 0 ):
                 print "empty string detected"
             elif ( argv[i][0] == '-' ):
@@ -76,6 +78,9 @@ class BagGraph:
                 mode = argv[i][1]
             elif ( mode == 'w' ):
                 print "   " + "skip " + argv[i]
+            elif ( mode == 'f' ):
+                print "   " + "file mode"
+                self.file_path = argv[i]
             elif ( mode == 's' ):
                 print "   " + "start_time = " + argv[i]
                 try:
@@ -134,7 +139,30 @@ class BagGraph:
                 print "   " + "unknown mode " + mode
                 mode = 'w'
 
+    def update_buf_file(self):
+        print "f> update buf file"
+        self.time_buf = [[]]
+        self.val_buf = [[[]]]
+        self.label_buf = [[self.tmp_label_name]]
+        ##
+        fin = open(self.file_path,"r")
+        line = fin.readline()
+        prev_time = 0
+        while line:
+            val = float(line.split(" ")[1])
+            tm = float(line.split(" ")[0])
+            if ( tm - prev_time >= self.time_step and tm >= self.start_time.to_sec() and tm < self.end_time.to_sec() ):
+                prev_time = tm
+                self.val_buf[0][0].append(val)
+                self.time_buf[0].append(tm)
+            line = fin.readline()
+        fin.close()
+
     def update_buf(self):
+        if self.file_path:
+            self.update_buf_file()
+            return
+        ##
         print "f> update buf"
         self.time_buf = []
         self.val_buf = []
@@ -214,6 +242,7 @@ class BagGraph:
         data_buf = []
         print ""
         print "time=" + str(event.xdata)
+        return
         self.ax.yaxis.set_ticks_position('left')
         self.ax.spines['left'].set_position(('data',event.xdata))
         ylabel(str(self.ylabel_name))
