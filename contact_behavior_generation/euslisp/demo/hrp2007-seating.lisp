@@ -126,7 +126,7 @@
 	;; (send bspline :gen-graph :name (format nil "~A-force" name)
 	;; :dim-list (subseq (send bspline :force-range) min max)))
 	;; (send bspline :contact-name-list) '(0 6 12) '(6 12 18))
-	t
+	bspline
 	)
        (t (warning-message 1 "optimization failed~%") nil))))))
 

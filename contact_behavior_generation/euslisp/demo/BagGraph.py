@@ -15,9 +15,9 @@ params = {'backend': 'ps',
           'legend.fontsize': 20,
           'xtick.labelsize': 15,
           'ytick.labelsize': 15,
-          "figure.subplot.right": 0.95,
+          "figure.subplot.right": 0.89,
           "figure.subplot.top": 0.95,
-          "figure.subplot.left": 0.05,
+          "figure.subplot.left": 0.08,
           "figure.subplot.bottom": 0.15,
           ##'text.usetex': True,
           'figure.figsize': [8, 5]}
@@ -38,10 +38,12 @@ class BagGraph:
         self.end_time = None
         self.plot_opt = None
         self.time_step = 0
+        self.yrate = 1.0
         print ""
         print inpath + " loading ..."
         ##
         self.file_path = None
+        self.file_twin_mode = False
         ##try:
         self.bag = Bag(inpath)
         ##
@@ -69,6 +71,7 @@ class BagGraph:
         self.ids = []
         self.plot_opt = None
         self.time_step = 0
+        self.yrate = 1.0
         print "[options]"
         for i in range(start,len(argv)):
             if ( len(argv[i]) == 0 ):
@@ -78,9 +81,17 @@ class BagGraph:
                 mode = argv[i][1]
             elif ( mode == 'w' ):
                 print "   " + "skip " + argv[i]
+            elif ( mode == 'k' ):
+                print "   " + "yrate=" +argv[i]
+                self.yrate = float(argv[i])
             elif ( mode == 'f' ):
+                print "   " + "file twin mode"
+                self.file_path = argv[i]
+                self.file_twin_mode = True
+            elif ( mode == 'F' ):
                 print "   " + "file mode"
                 self.file_path = argv[i]
+                self.file_twin_mode = False
             elif ( mode == 's' ):
                 print "   " + "start_time = " + argv[i]
                 try:
@@ -272,19 +283,26 @@ class BagGraph:
 
     def draw_graph(self):
         print "f> draw_graph"
+        ax2 = self.ax
+        if self.file_twin_mode and self.file_path:
+            ax2 = self.ax.twinx()
         for i in range(len(self.val_buf)):
             for j in range(len(self.val_buf[i])):
                 if self.plot_opt:
-                    self.ax.plot(self.time_buf[i], self.val_buf[i][j], self.plot_opt, label=self.label_buf[i][j])
+                    ax2.plot(self.time_buf[i], self.yrate * np.array(self.val_buf[i][j]), self.plot_opt, label=self.label_buf[i][j])
                 else:
-                    self.ax.plot(self.time_buf[i], self.val_buf[i][j], label=self.label_buf[i][j])
+                    ax2.plot(self.time_buf[i], self.yrate * np.array(self.val_buf[i][j]), label=self.label_buf[i][j])
         title(str(self.title_name))
         xlabel('time [sec]', fontsize=20)
         ylabel(str(self.ylabel_name) , fontsize=20)
         ## lgd = self.ax.legend(loc="upper left", bbox_to_anchor=(1.01,1.0))
-        lgd = self.ax.legend(loc="upper left", prop={'size' : 20})
+        if self.file_twin_mode and self.file_path:
+            lgd = ax2.legend(loc="upper right", prop={'size' : 20})
+        else:
+            lgd = ax2.legend(loc="upper left", prop={'size' : 20})
         self.fig.show()
         cid = self.fig.canvas.mpl_connect('button_press_event', self.onclick)
+        self.file_path=None
 
 if __name__ == '__main__':
     bag_path = "bag.bag"
