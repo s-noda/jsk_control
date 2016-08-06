@@ -39,13 +39,14 @@ class BagGraph:
         self.plot_opt = None
         self.time_step = 0
         self.yrate = 1.0
-        print ""
-        print inpath + " loading ..."
         ##
         self.file_path = None
         self.file_twin_mode = False
         ##try:
-        self.bag = Bag(inpath)
+        if inpath:
+            print ""
+            print inpath + " loading ..."
+            self.bag = Bag(inpath)
         ##
         self.fig = pylab.figure()
         self.ax = self.fig.add_subplot(111)
@@ -162,7 +163,7 @@ class BagGraph:
         while line:
             val = float(line.split(" ")[1])
             tm = float(line.split(" ")[0])
-            if ( tm - prev_time >= self.time_step and tm >= self.start_time.to_sec() and tm < self.end_time.to_sec() ):
+            if ( tm - prev_time >= self.time_step and (not self.start_time or tm >= self.start_time.to_sec()) and (not self.end_time or tm < self.end_time.to_sec() )):
                 prev_time = tm
                 self.val_buf[0][0].append(val)
                 self.time_buf[0].append(tm)
@@ -305,7 +306,7 @@ class BagGraph:
         self.file_path=None
 
 if __name__ == '__main__':
-    bag_path = "bag.bag"
+    bag_path = None
     if len(sys.argv) > 1:
         bag_path = sys.argv[1]
     bg = BagGraph(bag_path)

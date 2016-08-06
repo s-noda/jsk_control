@@ -221,7 +221,7 @@
        (send *robot* :arms :elbow-p :joint-angle -90)
        (send *robot* :fix-leg-to-coords (make-coords)))
 
-(defvar *mu0* 1.1)
+(defvar *mu0* 1.3)
 (defvar *rsd*)
 (defvar *log-root* (format nil "log/~A" (log-surfix)))
 (defvar *ik-debug-view* nil) ;; :no-message)
@@ -245,7 +245,7 @@
 	  :dim-list (subseq (send *last-bspline* :force-range) min max)))
  (send *last-bspline* :contact-name-list) '(0 6 12) '(6 12 18))
 
-;; (send *viewer* :viewing :look (send *viewer* :viewing :viewpoint) (send *viewer* :viewing :viewtarget))
+;;  (send *viewer* :viewing :look (send *viewer* :viewing :viewpoint) (send *irtviewer* :viewtarget))
 (send *viewer* :viewing :look #f(-63.1427 3991.32 715.147) #f(-134.75 -111.039 715.147))
 (dolist (rsd (reverse (remove-if-not '(lambda (rsd) (send rsd :buf :slide)) (cdr *rsd*))))
   (send rsd :draw :rest (list *climb-obj*) :torque-draw? nil)
@@ -276,6 +276,17 @@
     (format hfx "~A ~A~%" tm (aref f 12))
     (format hfz "~A ~A~%" tm (aref f 14)))
   (close rfx) (close rfz) (close lfx) (close lfz) (close hfx) (close hfz))
+
+(send *viewer* :viewing :look #f(-493.983 5165.75 574.728) #f(-215.457 -148.835 853.636))
+(let* ((root "postures")
+       (mkdir (unix::system (format nil "mkdir -p ~A" root)))
+       (id -1)
+       )
+  (dolist (rsd (reverse (cdr *rsd*)))
+    (send rsd :draw :rest (list *climb-obj*) :torque-draw? nil)
+    (send *viewer* :viewsurface :write-to-image-file
+	  (format nil "~A/~A.jpg" root (incf id)))))
+
 
 #|
 
