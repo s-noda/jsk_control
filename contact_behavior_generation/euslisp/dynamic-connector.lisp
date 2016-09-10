@@ -258,6 +258,7 @@
   (&optional
    (now (nth 3 *rsd*))
    (nxt (nth 2 *rsd*))
+   traj-elem-list
    &rest args)
   (cond
    ((not (and (send now :buf :slide)
@@ -271,8 +272,10 @@
 		       :rsd-list (list now nxt)
 		       :freq 4
 		       :trajectory-elem-list
-		       (gen-linear-interpolate-trajectory
-			:now now :nxt nxt :freq 4)
+		       (or
+			traj-elem-list
+			(gen-linear-interpolate-trajectory
+			 :now now :nxt nxt :freq 4))
 		       ;;
 		       nil
 		       ))
@@ -313,7 +316,7 @@
    (algorithm SLSQP)
    (debug-view nil)
    (max-time 5)
-   (split-cnt 5)
+   (split-cnt 4)
    (slip-cnt split-cnt)
    ;; (freq 15)
    (start-base-vel #F(0 0 0 0 0 0))
@@ -325,56 +328,103 @@
    (contact-wrench-optimize-limb '(:rleg :lleg))
    (linear-interpole-limb nil)
    (trajectory-overwrite? t)
+   ;;
+   traj-buf
    )
   (mapcar
    #'(lambda (rsd2 rsd1)
        (cond
 	((and (send rsd1 :buf :trajectory)
 	      (not trajectory-overwrite?)) 'nop)
-	((and (eq (send rsd1 :buf :mseq-mode) :reach)
-	      (eq (send rsd2 :buf :mseq-mode) :remove)
-	      (not (send rsd1 :buf :slide))
-	      (not (send rsd2 :buf :slide)))
+	(t
 	 (cond
-	  ((find (send rsd1 :buf :remove-limb) collision-avoid-trajectory-limb)
-	   (send rsd2 :draw :friction-cone? nil) ;;:rest (list *climb-obj*))
-	   (send rsd1 :buf :trajectory
-		 (list
-		  (cons :position
-			(send-all
-			 (demo-reach-ladder-spline-interpole
-			  :init1 nil
-			  :cnt slip-cnt
-			  :remove-limb (send rsd1 :buf :remove-limb)
-			  :start-av (copy-seq (send rsd2 :angle-vector))
-			  :start-coords (copy-object (send rsd2 :root-coords))
-			  :init2 nil
-			  :end-av (copy-seq (send rsd1 :angle-vector))
-			  :end-coords (copy-object (send rsd1 :root-coords))
-			  :debug-view nil
-			  :ik-params
+	  ((and (eq (send rsd1 :buf :mseq-mode) :reach)
+		(eq (send rsd2 :buf :mseq-mode) :remove)
+		(not (send rsd1 :buf :slide))
+		(not (send rsd2 :buf :slide)))
+	   (cond
+	    ((find (send rsd1 :buf :remove-limb) collision-avoid-trajectory-limb)
+	     (send rsd2 :draw :friction-cone? nil) ;;:rest (list *climb-obj*))
+	     (send rsd1 :buf :trajectory
+		   (list
+		    (cons :position
+			  (send-all
+			   (demo-reach-ladder-spline-interpole
+			    :init1 nil
+			    :cnt slip-cnt
+			    :remove-limb (send rsd1 :buf :remove-limb)
+			    :start-av (copy-seq (send rsd2 :angle-vector))
+			    :start-coords (copy-object (send rsd2 :root-coords))
+			    :init2 nil
+			    :end-av (copy-seq (send rsd1 :angle-vector))
+			    :end-coords (copy-object (send rsd1 :root-coords))
+			    :debug-view nil
+			    :ik-params
+			    (list
+			     :target-centroid-pos
+			     (let* ((fix-coords
+				     (send-all
+				      (remove-if
+				       #'(lambda (cs)
+					   (not (find (send cs :name)
+						      (list :rleg :lleg))))
+				       (send rsd1 :contact-states))
+				      :target-coords)))
+			       (scale (/ 1.0 (length fix-coords))
+				      (reduce #'v+ (append (list #F(0 0 0) #F(0 0 0))
+							   (send-all fix-coords :worldpos))))))
+			    )
+			   :position)))))
+	    ((find (send rsd1 :buf :remove-limb) contact-wrench-optimize-limb)
+	     (let* ((bspline (dynamic-contact-transition-demo
+			      :loop-max 1 :graph? nil :bspline nil
+			      :trajectory-extra-args
+			      (list :freq slip-cnt
+				    :rsd-list (list rsd2 rsd1))
+			      :init (setq *cog-buf* nil *avc-buf* nil)))
+		    (traj (if bspline (send bspline :trajectory-elem-list))))
+	       ;; (send rsd1 :buf :bspline bspline)
+	       (send rsd1 :buf :trajectory nil)
+	       (cond
+		((and bspline traj
+		      (send bspline :get :optimize-result)
+		      (send bspline :get :optimize-success))
+		 (send bspline :calc-descrete-dynamics-value)
+		 (send rsd1 :buf :trajectory
+		       (list (cons :position (reverse (send-all traj :position)))
+			     (cons :time (send-all traj :get :time))
+			     (cons :force (mapcar #'(lambda (d) (cdr (assoc :force d))) (send bspline :descrete-dynamics-value)))
+			     (cons :torque (mapcar #'(lambda (d) (cdr (assoc :torque d))) (send bspline :descrete-dynamics-value)))))
+		 )))
+	     rsd1)))
+	  (linear-interpole-limb
+	   (setq *cog-buf* nil) (setq *avc-buf* nil)
+	   (let* ((traj (apply
+			 #'fix-angle-vector-root-coords-vector
+			 (append
+			  (if (listp linear-interpole-limb)
+			      linear-interpole-limb)
 			  (list
-			   :target-centroid-pos
-			   (let* ((fix-coords
-				   (send-all
-				    (remove-if
-				     #'(lambda (cs)
-					 (not (find (send cs :name)
-						    (list :rleg :lleg))))
-				     (send rsd1 :contact-states))
-				    :target-coords)))
-			     (scale (/ 1.0 (length fix-coords))
-				    (reduce #'v+ (append (list #F(0 0 0) #F(0 0 0))
-							 (send-all fix-coords :worldpos))))))
-			  )
-			 :position)))))
-	  ((find (send rsd1 :buf :remove-limb) contact-wrench-optimize-limb)
-	   (let* ((bspline (dynamic-contact-transition-demo
-			    :loop-max 1 :graph? nil :bspline nil
-			    :trajectory-extra-args
-			    (list :freq slip-cnt
-				  :rsd-list (list rsd2 rsd1))
-			    :init (setq *cog-buf* nil *avc-buf* nil)))
+			   ;; :split-cnt slip-cnt
+			   :print-x-step (/ 1.0 slip-cnt)
+			   :rsd-list (list rsd2 rsd1)
+			   :move-coords-interpole-type :linear)))
+			))
+	     (setq traj-buf traj)
+	     (send rsd1 :buf :trajectory nil)
+	     (cond
+	      (traj
+	       (send rsd1 :buf :trajectory
+		     (list (cons :position
+				 (reverse (send-all traj :position)))
+			   (cons :time (send-all traj :get :time))
+			   ))))))
+	  )
+	 (cond
+	  ((and (send rsd1 :buf :slide)
+		(send rsd2 :buf :slide)
+		contact-wrench-optimize-limb)
+	   (let* ((bspline (slide-trajectory-check-func rsd1 rsd2 traj-buf))
 		  (traj (if bspline (send bspline :trajectory-elem-list))))
 	     ;; (send rsd1 :buf :bspline bspline)
 	     (send rsd1 :buf :trajectory nil)
@@ -388,35 +438,11 @@
 			   (cons :time (send-all traj :get :time))
 			   (cons :force (mapcar #'(lambda (d) (cdr (assoc :force d))) (send bspline :descrete-dynamics-value)))
 			   (cons :torque (mapcar #'(lambda (d) (cdr (assoc :torque d))) (send bspline :descrete-dynamics-value)))))
-	       )))
-	   rsd1)))
-	(linear-interpole-limb
-	 (setq *cog-buf* nil) (setq *avc-buf* nil)
-	 (let* ((traj (apply
-		       #'fix-angle-vector-root-coords-vector
-		       (append
-			(if (listp linear-interpole-limb)
-			    linear-interpole-limb)
-			(list
-			 ;; :split-cnt slip-cnt
-			 :print-x-step (/ 1.0 slip-cnt)
-			 :rsd-list (list rsd2 rsd1)
-			 :move-coords-interpole-type :linear)))
-		      ))
-	   (send rsd1 :buf :trajectory nil)
-	   (cond
-	    (traj
-	     (send rsd1 :buf :trajectory
-		   (list (cons :position
-			       (reverse (send-all traj :position)))
-			 (cons :time (send-all traj :get :time))
-			 ))))))
-	)
+	       )))))
+	 ))
        rsd1)
    (cdr rsd-list)
-   rsd-list
-   ;; (append (cdr rsd-list) (list *sample-rsd*))
-   ))
+   rsd-list))
 
 (defun torque-x-speed-test
   (&key
