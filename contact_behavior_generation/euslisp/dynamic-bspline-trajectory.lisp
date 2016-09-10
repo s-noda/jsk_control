@@ -1005,7 +1005,7 @@
    ;; filter
    (if (not (listp trajectory-elem-list))
        (setq trajectory-elem-list nil))
-   (dotimes (i 1);; 3)
+   (dotimes (i 3)
    	     ;; (max
    	     ;;  1
    	     ;;  (round (/ (* (/ (length trajectory-elem-list) 60.0)
@@ -1358,10 +1358,10 @@
      :ineq-scale ineq-scale
      :initial-state (setq gain-vector (instantiate float-vector (* id-max dimension)))
      :eval-weight-matrix ;; (unit-matrix (* id-max dimension)) ;;objective-matrix
-     (m+ (scale-matrix -1e-1 objective-matrix)
+     (m+ (scale-matrix 1e-1 objective-matrix)
 	 (m+
-	  (scale-matrix -5e+0 objective-matrix2)
-	  (scale-matrix -1e-1 (unit-matrix (* id-max dimension)))))
+	  (scale-matrix 5e+0 objective-matrix2)
+	  (scale-matrix 1e-1 (unit-matrix (* id-max dimension)))))
      :equality-matrix
      (matrix-append
       (flatten

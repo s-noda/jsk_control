@@ -10,59 +10,59 @@
 (defun test-proc
   (key)
   (case key
-    (:kirin-ladder
-     (cond
-      ((let* ((init
-	       (progn
-		 (demo-climb-setup :kirin-ladder)
-		 (init-pose)
-		 (send *robot* :fix-leg-to-coords (make-coords :pos #F(0 0 3)))
-		 (send *robot* :reset-manip-pose)
-		 (send *robot* :arms :shoulder-p :joint-angle 0)))
-	      (rsd (demo-motion-sequence-with-timer
-		    :ik-debug-view *ik-debug-view*
-		    :loop-max 8
-		    :tmax-hand-rate 0.6
-		    :tmax-leg-rate 0.6
-		    :log-file (format nil "~A/kirin-ladder" *log-root*)
-		    :trajectory-check-func
-		    '(lambda (next now &rest args)
-		       (send next :buf :time 2.0)
-		       (send now :buf :time 0.0)
-		       (connect-rsd :rsd-list (list next now))
-		       (send next :buf :trajectory))
-		    ;;(not (assoc :status
-		    ;;(send next :buf :trajectory)))
-		    ;;(cdr (assoc :status
-		    ;;(send next :buf :trajectory)))))
-		    :ref-order '(:rarm :larm :rleg :lleg)
-		    )))
-	 (cond
-	  ((listp rsd)
-	   (apply 'rsd-play :file (format nil "~A/kirin-ladder.rsd" *log-root*)
-		  :auto? t (if *rsd-play-graph?* nil (list :graph *rsd-play-graph?*)))
-	   (quit-graph)))
-	 (atom rsd))
-       (print 'kirin-ladder-error)
-       t)))
-    (:rock-wall
-     (cond
-      ((let* ((init (demo-climb-setup :rock-wall))
-	      (rsd (demo-motion-sequence-with-timer
-		    :ik-debug-view *ik-debug-view*
-		    :loop-max 8
-		    :tmax-hand-rate 0.8
-		    :tmax-leg-rate 0.8
-		    :log-file (format nil "~A/rock-wall" *log-root*)
-		    )))
-	 (cond
-	  ((listp rsd)
-	   (apply 'rsd-play :file (format nil "~A/rock-wall.rsd" *log-root*)
-		  :auto? t (if *rsd-play-graph?* nil (list :graph *rsd-play-graph?*)))
-	   (quit-graph)))
-	 (atom rsd))
-       (print 'rock-wall-error)
-       t)))
+    ;; (:kirin-ladder
+    ;;  (cond
+    ;;   ((let* ((init
+    ;; 	       (progn
+    ;; 		 (demo-climb-setup :kirin-ladder)
+    ;; 		 (init-pose)
+    ;; 		 (send *robot* :fix-leg-to-coords (make-coords :pos #F(0 0 3)))
+    ;; 		 (send *robot* :reset-manip-pose)
+    ;; 		 (send *robot* :arms :shoulder-p :joint-angle 0)))
+    ;; 	      (rsd (demo-motion-sequence-with-timer
+    ;; 		    :ik-debug-view *ik-debug-view*
+    ;; 		    :loop-max 8
+    ;; 		    :tmax-hand-rate 0.6
+    ;; 		    :tmax-leg-rate 0.6
+    ;; 		    :log-file (format nil "~A/kirin-ladder" *log-root*)
+    ;; 		    :trajectory-check-func
+    ;; 		    '(lambda (next now &rest args)
+    ;; 		       (send next :buf :time 2.0)
+    ;; 		       (send now :buf :time 0.0)
+    ;; 		       (connect-rsd :rsd-list (list next now))
+    ;; 		       (send next :buf :trajectory))
+    ;; 		    ;;(not (assoc :status
+    ;; 		    ;;(send next :buf :trajectory)))
+    ;; 		    ;;(cdr (assoc :status
+    ;; 		    ;;(send next :buf :trajectory)))))
+    ;; 		    :ref-order '(:rarm :larm :rleg :lleg)
+    ;; 		    )))
+    ;; 	 (cond
+    ;; 	  ((listp rsd)
+    ;; 	   (apply 'rsd-play :file (format nil "~A/kirin-ladder.rsd" *log-root*)
+    ;; 		  :auto? t (if *rsd-play-graph?* nil (list :graph *rsd-play-graph?*)))
+    ;; 	   (quit-graph)))
+    ;; 	 (atom rsd))
+    ;;    (print 'kirin-ladder-error)
+    ;;    t)))
+    ;; (:rock-wall
+    ;;  (cond
+    ;;   ((let* ((init (demo-climb-setup :rock-wall))
+    ;; 	      (rsd (demo-motion-sequence-with-timer
+    ;; 		    :ik-debug-view *ik-debug-view*
+    ;; 		    :loop-max 8
+    ;; 		    :tmax-hand-rate 0.8
+    ;; 		    :tmax-leg-rate 0.8
+    ;; 		    :log-file (format nil "~A/rock-wall" *log-root*)
+    ;; 		    )))
+    ;; 	 (cond
+    ;; 	  ((listp rsd)
+    ;; 	   (apply 'rsd-play :file (format nil "~A/rock-wall.rsd" *log-root*)
+    ;; 		  :auto? t (if *rsd-play-graph?* nil (list :graph *rsd-play-graph?*)))
+    ;; 	   (quit-graph)))
+    ;; 	 (atom rsd))
+    ;;    (print 'rock-wall-error)
+    ;;    t)))
     (:four-leg-seat
      (cond
       ((let* ((init
@@ -89,6 +89,7 @@
 		    :tmax-hand-rate 1.0
 		    :tmax-leg-rate 1.0
 		    :log-file (format nil "~A/four-leg-seat" *log-root*)
+		    :trajectory-check-func 'slide-trajectory-check-func
 		    )))
 	 (cond
 	  ((listp rsd)
@@ -136,6 +137,18 @@
 		    :tmax-hand-rate 1.0
 		    :tmax-leg-rate 1.0
 		    :log-file (format nil "~A/simple-floor" *log-root*)
+		    ;; :trajectory-check-func 'slide-trajectory-check-func
+		    :trajectory-check-func
+		    '(lambda (next now &rest args)
+		       (send next :buf :time 5.0)
+		       (send now :buf :time 0.0)
+		       (connect-rsd
+			:rsd-list (list next now)
+			:collision-avoid-trajectory-limb nil
+			:contact-wrench-optimize-limb
+			'(:rarm :larm :rleg :lleg)
+			:linear-interpole-limb t)
+		       (send next :buf :trajectory))
 		    :ref-order '(:rarm :larm :rleg :lleg)
 		    ;; :error-thre 0.7
 		    )))

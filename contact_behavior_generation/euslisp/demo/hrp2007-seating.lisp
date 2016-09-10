@@ -56,6 +56,7 @@
 		    :transformation
 		    (send c :copy-worldcoords))
 	      :local))
+      (ik-wrapper)
       ;;
       ;; (let (support-coords tmp-coords move-coords pos rot ra)
       ;; 	(setq support-coords (send c :copy-worldcoords))

@@ -194,6 +194,118 @@
     ))
 (require "dynamic-bspline-trajectory.lisp")
 
+(defun gen-linear-interpolate-trajectory
+  (&key
+   (robot *robot*)
+   (root-link (car (send *robot* :links)))
+   (now (nth 3 *rsd*))
+   (nxt (nth 2 *rsd*))
+   (now-t (or (send now :buf :time) 0.0))
+   (nxt-t (or (send nxt :buf :time) 5.0))
+   (fix-coords
+    (send (find-if #'(lambda (cs) (not (eq (send cs :name)
+					   (send now :buf :remove-limb))))
+		   (send now :contact-states))
+	  :contact-coords))
+   (freq 30)
+   (position-list nil)
+   (coords-list nil)
+   (time-list nil)
+   ret)
+  (send now :draw :friction-cone? nil :torque-draw? nil)
+  (send-all (send robot :links) :worldcoords)
+  (let* ((c (send fix-coords :copy-worldcoords))
+	 (total (* freq (- nxt-t now-t)))
+	 (rate 0))
+    (dotimes (i (+ 1 total))
+      (setq rate (/ (* 1.0 i) total))
+      (push (v+ (scale rate (send nxt :angle-vector))
+		(scale (- 1 rate) (send now :angle-vector)))
+	    position-list)
+      (send robot :angle-vector (copy-seq (car position-list)))
+      (send-all (send robot :links) :worldcoords)
+      ;;
+      (while (> (norm (send fix-coords :difference-position c)) 1)
+	(send robot :transform
+	      (send (send fix-coords :copy-worldcoords)
+		    :transformation
+		    (send c :copy-worldcoords))
+	      :local))
+      (ik-wrapper)
+      ;;
+      ;; (let (support-coords tmp-coords move-coords pos rot ra)
+      ;; 	(setq support-coords (send c :copy-worldcoords))
+      ;; 	(setq tmp-coords (send fix-coords :copy-worldcoords))
+      ;; 	(setq move-coords (send support-coords :transformation robot))
+      ;; 	(send tmp-coords :transform move-coords :local)
+      ;; 	(send robot :newcoords tmp-coords)
+      ;; 	(send robot :worldcoords))
+      ;;
+      (push (send root-link :copy-worldcoords) coords-list)
+      (push (+ (* rate (- nxt-t now-t)) now-t) time-list)
+      ;; (send *viewer* :draw-objects)
+      ;; (unix::usleep (* 100 1000))
+      )
+    (setq ret
+	  (gen-dynamic-trajectory
+	   :freq freq :position-list (reverse position-list)
+	   :coords-list (reverse coords-list) :fix-length t))
+    (mapcar #'(lambda (traj tm) (send traj :put :time tm))
+            ret (reverse time-list))
+    ret))
+
+(defun slide-trajectory-check-func
+  (&optional
+   (now (nth 3 *rsd*))
+   (nxt (nth 2 *rsd*))
+   &rest args)
+  (cond
+   ((not (and (send now :buf :slide)
+	      (send nxt :buf :slide)))
+    t)
+   (t
+    (send now :buf :time 0)
+    (send nxt :buf :time 5)
+    (let* ((bspline
+	    (instance* partition-spline-contact-wrench-trajectory :init
+		       :rsd-list (list now nxt)
+		       :freq 4
+		       :trajectory-elem-list
+		       (gen-linear-interpolate-trajectory
+			:now now :nxt nxt :freq 4)
+		       ;;
+		       nil
+		       ))
+	   ;;
+	   (slide-opt (slide-friction-condition-extra-args
+		       :contact-states (send now :contact-states)
+		       :from (send now :contact-states
+				   (send now :buf :remove-limb))
+		       :to (send nxt :contact-states
+				 (send nxt :buf :remove-limb)))))
+      (send bspline :set-val 'extra-equality-matrix
+	    (send bspline
+		  :calc-coeff-matrix-for-gain-vector
+		  (cadr (member :extra-equality-matrix slide-opt))
+		  :tm-list (car (send bspline :contact-time-list))
+		  :dim-list (send bspline :force-range)))
+      (send bspline :set-val 'extra-equality-vector
+	    (send bspline :constant-vector
+		  (cadr (member :extra-equality-vector slide-opt))
+		  :tm-list (car (send bspline :contact-time-list))))
+      (cond
+       ((and (send* bspline :optimize nil)
+	     (send bspline :get :optimize-result)
+	     (send bspline :get :optimize-success))
+	;; (mapcar
+	;; '(lambda (name min max)
+	;; (send bspline :gen-graph :name (format nil "~A-force" name)
+	;; :dim-list (subseq (send bspline :force-range) min max)))
+	;; (send bspline :contact-name-list) '(0 6 12) '(6 12 18))
+	bspline
+	)
+       (t (warning-message 1 "optimization failed~%") nil))))))
+
 (defun connect-rsd
   (&key
    (file "log/tmp.rsd")
