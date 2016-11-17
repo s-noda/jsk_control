@@ -1,0 +1,24 @@
+<package>
+  <name>contact_behavior_generation</name>
+  <description>
+    contact_behavior_generation
+  </description>
+  <author email="s-noda@jsk.t.u-tokyo.ac.jp">s-noda</author>
+  <maintainer email="s-noda@jsk.t.u-tokyo.ac.jp">s-noda</maintainer>
+
+  <license>NYLS</license>
+  <version>0.0.1</version>
+  <url>http://ros.org/wiki/contact_behavior_generation</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roseus</build_depend>
+  <build_depend>eus_nlopt</build_depend>
+  <build_depend>eus_qp</build_depend>
+  <build_depend>eus_qpoases</build_depend>
+
+  <run_depend>roseus</run_depend>
+  <build_depend>eus_nlopt</build_depend>
+  <build_depend>eus_qp</build_depend>
+  <build_depend>eus_qpoases</build_depend>
+
+</package>

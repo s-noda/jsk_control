@@ -1,0 +1,15 @@
+<launch>
+  <node pkg="roseus" type="roseus" name="constraints_force_observer_rleg"
+	args="&quot;(setq *force-observer-limb* :rleg)&quot; &quot;(load \&quot;package\://contact_behavior_generation/euslisp/demo/constraint-force-observer.l\&quot;)&quot; &quot;(progn (setq rleg_sensor_observer::*contact-local-vertical-vector* #f(0 0 1)) (rleg_sensor_observer::main))&quot;">
+    <!-- <remap from="/off_lfsensor" to="/filtered_rfsensor_x50" /> -->
+  </node>
+  <!-- -->
+  <node pkg="roseus" type="roseus" name="constraints_force_observer_lleg"
+	args="&quot;(setq *force-observer-limb* :lleg)&quot; &quot;(load \&quot;package\://contact_behavior_generation/euslisp/demo/constraint-force-observer.l\&quot;)&quot; &quot;(progn (setq lleg_sensor_observer::*contact-local-vertical-vector* #f(0 0 1)) (lleg_sensor_observer::main))&quot;">
+    <!-- <remap from="/off_lfsensor" to="/filtered_rfsensor_x50" /> -->
+  </node>
+  <!-- -->
+  <node pkg="roseus" type="roseus" name="constraints_torque_observer"
+        args="&quot;(load \&quot;package\://contact_behavior_generation/euslisp/demo/constraint-torque-observer.l\&quot;)&quot; &quot;(torque_sensor_observer::main)&quot;">
+  </node>
+</launch>
