@@ -12,4 +12,4 @@ Robot models depend on hrpsys_ros_bridge_tutorials (https://github.com/start-jsk
 
 ```cd euslisp; ./test.lisp;```
 
-<img src="https://raw.githubusercontent.com/s-noda/contact_behavior_generation/master/image/github.gif" />
+<img src="https://raw.githubusercontent.com/s-noda/jsk_control/contact_behavior_generation_17112016/contact_behavior_generation/image/github.gif" />
